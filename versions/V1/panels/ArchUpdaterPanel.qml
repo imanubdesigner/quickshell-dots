@@ -18,7 +18,7 @@ PanelWindow {
 
     Process {
         id: panelUpdateRunner
-        command: ["bash", "-c", "AUR=$(command -v paru || command -v yay); omarchy-launch-floating-terminal-with-presentation \"$AUR\""]
+        command: ["bash", "-c", "omarchy-launch-floating-terminal-with-presentation 'gum confirm \"Update packages?\" && { AUR=$(command -v paru || command -v yay); $AUR -Syu --noconfirm; }'"]
     }
 
     property real reveal: root.archVisible ? 1 : 0

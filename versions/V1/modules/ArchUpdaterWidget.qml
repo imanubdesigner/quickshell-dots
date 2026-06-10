@@ -10,7 +10,6 @@ Item {
     property int updateCount: 0
     property int systemCount: 0
     property int aurCount: 0
-    property int flatpakCount: 0
     property bool refreshing: false
 
     readonly property bool hasUpdates: rootMod.updateCount > 0
@@ -52,11 +51,7 @@ Item {
             "bash", "-c",
             "LC_ALL=C pacman -Qu 2>/dev/null | while read n o _ v; do echo \"S|\"$n\"|\"$o\"|\"$v; done; " +
             "if command -v paru &>/dev/null; then paru -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; " +
-            "elif command -v yay &>/dev/null; then yay -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; fi; " +
-            "if command -v flatpak &>/dev/null; then " +
-            "  flatpak update --no-deploy --noninteractive >/dev/null 2>&1; " +
-            "  flatpak remote-ls --updates --columns=application,version 2>/dev/null | while read a v; do echo \"F|\"$a\"|?|\"$v; done; " +
-            "fi"
+            "elif command -v yay &>/dev/null; then yay -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; fi"
         ]
         rootMod.refreshing = true
         checkProc.command = cmd
@@ -67,28 +62,21 @@ Item {
     function parseOutput(text) {
         var lines = text.trim().split("\n")
         var updates = []
-        var sysCount = 0; var aCount = 0; var fCount = 0
+        var sysCount = 0; var aCount = 0
         for (var i = 0; i < lines.length; i++) {
             var parts = lines[i].split("|")
             if (parts.length >= 4) {
                 var src = parts[0]
-                var entry = {name: parts[1], oldVer: parts[2], newVer: parts[3], source: src === "S" ? "system" : (src === "A" ? "aur" : "flatpak")}
+                var entry = {name: parts[1], oldVer: parts[2], newVer: parts[3], source: src === "S" ? "system" : "aur"}
                 updates.push(entry)
                 if (src === "S") sysCount++
                 else if (src === "A") aCount++
-                else if (src === "F") fCount++
             }
         }
         rootMod.systemCount = sysCount
         rootMod.aurCount = aCount
-        rootMod.flatpakCount = fCount
-        rootMod.updateCount = sysCount + aCount + fCount
+        rootMod.updateCount = sysCount + aCount
         root.archUpdates = updates
-    }
-
-    Process {
-        id: updateRunner
-        command: ["bash", "-c", "AUR=$(command -v paru || command -v yay); omarchy-launch-floating-terminal-with-presentation \"$AUR\""]
     }
 
     Item {
@@ -136,7 +124,6 @@ Item {
         var parts = []
         if (rootMod.systemCount) parts.push(rootMod.systemCount + " system")
         if (rootMod.aurCount) parts.push(rootMod.aurCount + " AUR")
-        if (rootMod.flatpakCount) parts.push(rootMod.flatpakCount + " flatpak")
         return parts.join(" \u00B7 ") + "\nClick to view details"
     }
 
