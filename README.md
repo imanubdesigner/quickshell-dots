@@ -85,8 +85,8 @@ Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
     <td align="center"><b>Bar functions &amp; animations</b></td>
   </tr>
   <tr>
-    <td><video src="https://github.com/user-attachments/assets/160ca54f-defb-40de-a0e4-6d2e4139294d" controls="controls" style="max-width: 100%;"></video></td>
     <td><video src="https://github.com/user-attachments/assets/5e91501e-e12c-4125-be10-caa26678098d" controls="controls" style="max-width: 100%;"></video></td>
+    <td><video src="https://github.com/user-attachments/assets/160ca54f-defb-40de-a0e4-6d2e4139294d" controls="controls" style="max-width: 100%;"></video></td>
   </tr>
 </table>
 
