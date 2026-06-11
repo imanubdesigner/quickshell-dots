@@ -83,10 +83,12 @@ Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
   <tr>
     <td align="center"><b>Theme Picker</b></td>
     <td align="center"><b>Bar functions &amp; animations</b></td>
+    <td align="center"><b>Unlockbar + Widget drag/drop</b></td>
   </tr>
   <tr>
     <td><video src="https://github.com/user-attachments/assets/160ca54f-defb-40de-a0e4-6d2e4139294d" controls="controls" style="max-width: 100%;"></video></td>
     <td><video src="https://github.com/user-attachments/assets/5e91501e-e12c-4125-be10-caa26678098d" controls="controls" style="max-width: 100%;"></video></td>
+    <td><video src="https://github.com/user-attachments/assets/1971385a-6d8b-43ee-ab1d-763e2e40dbf7" controls="controls" style="max-width: 100%;"></video></td>
   </tr>
 </table>
 
@@ -99,18 +101,19 @@ Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
 
 | Module | Function |
 |---|---|
+| Unlock &amp; reorder ✨ | unlock the bar → drag whole widget-groups to swap positions · persistent |
 | Image pickers ✨ | theme · wallpaper · screenshots · videos — 3 selectable styles: Tanzaku · Hearthstone · Carousel (cached thumbnails + instant reopen) |
 | Workspaces | switch · overview · persist 10 / 5 / active-only ✨ |
 | Weather | current conditions · °C / °F (imperial/metric) toggle ✨ |
 | Clock | time · calendar · 24h / 12h toggle ✨ |
 | Mpris | media controls |
-| System monitors | CPU · RAM · battery · net · bt |
+| System monitors | CPU · RAM · battery (health · cycles · size · draw ✨) · net · bt |
 | Control center | quick toggles · power · widget toggles ✨ · workspace mode ✨ · picker style ✨ |
 | Keybind IPC ✨ | `qs -c bar ipc call picker theme\|wallpaper\|screenshots\|videos` |
-| Split groups | splittable module pills |
+| Split groups ✨ | positional pill splits + gap animations (Stream · Surge · Bolt · Bolt 2) |
 | Per-widget panels | click widget → popup |
 
-> ✨ = new in v2.0.0 / v2.0.1
+> ✨ = new in v2.0.0 – v2.1.0
 
 </details>
 
