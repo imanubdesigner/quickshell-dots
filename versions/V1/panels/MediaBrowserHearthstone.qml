@@ -253,10 +253,30 @@ PanelWindow {
         anchors.fill: parent
         focus: panel.visible && !(panel.ready && panel.filtered.length > 0)
         Keys.onPressed: function(event) {
-            if (event.key === Qt.Key_Escape) { root.mediaBrowserVisible = false; event.accepted = true }
+            if (event.key === Qt.Key_Escape) {
+                if (panel.filterText) panel.filterText = ""
+                else root.mediaBrowserVisible = false
+                event.accepted = true
+            } else if (event.key === Qt.Key_Backspace) {
+                if (panel.filterText.length > 0) panel.filterText = panel.filterText.slice(0, -1)
+                event.accepted = true
+            } else if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32
+                       && event.text.charCodeAt(0) !== 127
+                       && (event.modifiers === Qt.NoModifier || event.modifiers === Qt.ShiftModifier)) {
+                if (event.text !== " " || (panel.filterText.length > 0 && !panel.filterText.endsWith(" "))) panel.filterText += event.text;
+                event.accepted = true
+            }
         }
     }
     // ── loading / empty ──
+    Text {
+        visible: root.mediaBrowserVisible && panel.active && panel.ready && panel.filtered.length === 0
+        anchors.centerIn: parent
+        horizontalAlignment: Text.AlignHCenter
+        text: "No matches: " + panel.filterText + "\n\nBackspace to edit, or Esc to clear"
+        color: root.ink
+        font.family: root.mono; font.pixelSize: 16; font.letterSpacing: 1
+    }
     Text {
         visible: root.mediaBrowserVisible && panel.active && !panel.ready
         anchors.centerIn: parent
