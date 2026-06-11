@@ -1,4 +1,7 @@
 #!/bin/bash
 # Quickshell Rise — launch the bar at session start.
-# -n bails out if an instance is already running (idempotent).
-qs -n -c bar
+# stop waybar (omarchy re-autostarts it at login → would overlap), then launch
+# the bar detached so we don't block later post-boot.d hooks (omarchy-hook runs
+# them sequentially). -n bails out if an instance is already running (idempotent).
+pkill -x waybar 2>/dev/null || true
+setsid qs -n -c bar >/dev/null 2>&1 &
