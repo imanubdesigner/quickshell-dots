@@ -29,12 +29,18 @@ Item {
             onStreamFinished: {
                 rootMod.parseOutput(this.text)
                 rootMod.refreshing = false
+                refreshWatchdog.stop()
             }
         }
         onExited: (exitCode) => {
             if (exitCode !== 0) rootMod.refreshing = false
+            refreshWatchdog.stop()
         }
     }
+
+    // safety: if the check ever hangs (AUR RPC stalls past the timeout), unstick
+    // `refreshing` so future refreshes aren't blocked forever
+    Timer { id: refreshWatchdog; interval: 45000; onTriggered: rootMod.refreshing = false }
 
     Timer {
         interval: 1800000; running: true; repeat: true; triggeredOnStart: true
@@ -50,10 +56,11 @@ Item {
         var cmd = [
             "bash", "-c",
             "LC_ALL=C pacman -Qu 2>/dev/null | while read n o _ v; do echo \"S|\"$n\"|\"$o\"|\"$v; done; " +
-            "if command -v paru &>/dev/null; then paru -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; " +
-            "elif command -v yay &>/dev/null; then yay -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; fi"
+            "if command -v paru &>/dev/null; then timeout 30 paru -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; " +
+            "elif command -v yay &>/dev/null; then timeout 30 yay -Qum 2>/dev/null | while read n o _ v; do echo \"A|\"$n\"|\"$o\"|\"$v; done; fi"
         ]
         rootMod.refreshing = true
+        refreshWatchdog.restart()
         checkProc.command = cmd
         checkProc.running = false
         checkProc.running = true
