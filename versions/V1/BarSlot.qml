@@ -37,6 +37,10 @@ PanelWindow {
         function unlock(): void { barSlot.root.barUnlocked = true }
     }
 
+    // keep Hyprland awake while the idle-inhibitor toggle is on (was lost in the
+    // slot port — lived only in the now-inactive Bar.qml)
+    IdleInhibitor { window: barSlot; enabled: barSlot.root.idleInhibited }
+
     readonly property color accent: barSlot.root.seal
 
     // ── dim backdrop while unlocked (edit mode); click empty → lock ──
