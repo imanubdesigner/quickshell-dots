@@ -48,6 +48,11 @@ hook="$HOME/.config/omarchy/hooks/theme-set.d/50-quickshell-bar.sh"
 [[ -f "$hook" ]] && { rm -f "$hook"; info "Removed theme hook"; }
 
 # 4. remove the config — restore the most recent backup if one exists
+# safety: refuse to touch a config we didn't install (install.sh writes .qsrise)
+if [[ -d "$DEST" && ! -e "$DEST/.qsrise" ]]; then
+  warn "$DEST was not installed by Quickshell Rise (no .qsrise marker) — leaving it untouched."
+  exit 1
+fi
 restored=false
 if [[ -d "$DEST" ]]; then
   rm -rf "$DEST"
