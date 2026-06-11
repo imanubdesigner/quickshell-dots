@@ -386,7 +386,7 @@ PanelWindow {
             } else if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32
                        && event.text.charCodeAt(0) !== 127
                        && (event.modifiers === Qt.NoModifier || event.modifiers === Qt.ShiftModifier)) {
-                panel.filterText += event.text; event.accepted = true
+                if (event.text !== " " || (panel.filterText.length > 0 && !panel.filterText.endsWith(" "))) panel.filterText += event.text; event.accepted = true
             }
         }
 
