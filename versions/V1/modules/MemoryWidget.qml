@@ -21,8 +21,8 @@ Item {
     readonly property string tooltipText: usedGiB.toFixed(1) + "/" + totalGiB.toFixed(0) + " GB"
 
     Rectangle {
-        anchors.centerIn: row
-        width: row.width + 18
+        x: 0; anchors.verticalCenter: parent.verticalCenter
+        width: Math.round(row.width) + 18
         height: 24
         radius: 12
         color: root.pill

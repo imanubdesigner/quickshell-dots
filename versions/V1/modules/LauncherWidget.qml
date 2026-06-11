@@ -79,6 +79,8 @@ Item {
         fillMode: Image.PreserveAspectFit
         smooth: true; mipmap: true
         layer.enabled: true
+        layer.smooth: true
+        layer.textureSize: Qt.size(Math.round(width * 3), Math.round(height * 3))   // supersample → crisp
         layer.effect: ShaderEffect {
             property color tintColor: root.seal
             fragmentShader: Qt.resolvedUrl("../shaders/logo-tint.frag.qsb")

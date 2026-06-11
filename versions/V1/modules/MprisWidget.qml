@@ -68,8 +68,8 @@ Item {
     }
 
     Rectangle {
-        anchors.centerIn: parent
-        width: rootMod.active ? (row.implicitWidth + 18) : (idleNote.implicitWidth + 16)
+        x: 0; anchors.verticalCenter: parent.verticalCenter
+        width: rootMod.active ? (Math.round(row.implicitWidth) + 18) : (Math.round(idleNote.implicitWidth) + 16)
         height: 24
         radius: 12
         color: root.pill

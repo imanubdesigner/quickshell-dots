@@ -22,8 +22,8 @@ Item {
     }
 
     Rectangle {
-        anchors.centerIn: wsRow
-        width: wsRow.width + 8
+        x: -4; anchors.verticalCenter: parent.verticalCenter
+        width: Math.round(wsRow.width) + 8
         height: 24
         radius: 12
         color: root.pill

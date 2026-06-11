@@ -34,8 +34,8 @@ Item {
     Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
     Rectangle {
-        anchors.centerIn: row
-        width: row.width + 18
+        x: 0; anchors.verticalCenter: parent.verticalCenter
+        width: Math.round(row.width) + 18
         height: 24
         radius: 12
         color: root.pill
