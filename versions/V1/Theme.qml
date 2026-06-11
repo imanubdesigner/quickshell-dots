@@ -260,6 +260,7 @@ Item {
     onModClaudeChanged:     if (_widgetsLoaded) saveWidgets()
     onModPowerChanged:      if (_widgetsLoaded) saveWidgets()
     onModBluetoothChanged:  if (_widgetsLoaded) saveWidgets()
+    onModNetworkChanged:    if (_widgetsLoaded) saveWidgets()
     onWorkspaceModeChanged: if (_widgetsLoaded) saveWidgets()
     onPickerStyleChanged:   if (_widgetsLoaded) saveWidgets()
     onWeatherImperialChanged: if (_widgetsLoaded) saveWidgets()
@@ -274,7 +275,8 @@ Item {
                  + workspaceMode + " "
                  + pickerStyle + " "
                  + (weatherImperial ? "1" : "0") + " "
-                 + (clock12h        ? "1" : "0")
+                 + (clock12h        ? "1" : "0") + " "
+                 + (modNetwork      ? "1" : "0")   // appended → old caches just keep the default
         widgetSaveProc.command = ["bash", "-c",
             "echo '" + line + "' > '" + widgetsCachePath + "'"]
         widgetSaveProc.running = false
@@ -317,6 +319,7 @@ Item {
                     // weatherImperial / clock12h follow pickerStyle
                     if (parts.length > wsField + 2) theme.weatherImperial = parts[wsField + 2] === "1"
                     if (parts.length > wsField + 3) theme.clock12h        = parts[wsField + 3] === "1"
+                    if (parts.length > wsField + 4) theme.modNetwork      = parts[wsField + 4] === "1"
                 }
                 theme._widgetsLoaded = true
             }
