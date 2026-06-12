@@ -94,6 +94,13 @@ else
   warn "Nothing installed at $DEST"
 fi
 
+# 4b. remove saved bar settings (widget toggles, splits, slot order)
+if compgen -G "$HOME/.cache/quickshell_*" >/dev/null 2>&1; then
+  rm -f "$HOME/.cache/quickshell_widgets" "$HOME/.cache/quickshell_splits" \
+        "$HOME/.cache/quickshell_barorder" "$HOME/.cache/quickshell_barsplits"
+  info "Removed saved bar settings (widget toggles, splits, slot order)"
+fi
+
 # 5. restart the bar that was in use before install
 if [[ "$restored" == true ]] && [[ -f "$DEST/shell.qml" ]]; then
   setsid quickshell -p "$DEST" >/dev/null 2>&1 & disown
