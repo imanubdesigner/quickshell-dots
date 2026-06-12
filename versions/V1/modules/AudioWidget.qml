@@ -9,7 +9,6 @@ Item {
     AudioData { id: audio; poll: true }
     readonly property int    volume:   audio.volume
     readonly property bool   muted:    audio.muted
-    readonly property string portType: audio.portType
 
     readonly property string tooltipText: muted
         ? "Muted · " + volume + "%"

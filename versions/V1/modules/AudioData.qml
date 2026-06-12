@@ -1,50 +1,31 @@
 import QtQuick
-import Quickshell.Io
+import Quickshell.Services.Pipewire
 
-// Shared default-sink probe: volume / muted / output-port type.
-// Used by AudioWidget (poll: true → refresh every `interval`) and by
-// VolumePanel (on-demand via refresh() when it opens). Centralizes the
-// pactl command + parsing that previously lived duplicated in both files.
+// Default-sink volume / mute, read natively from PipeWire — event-driven, no
+// subprocess. Replaces the old 3s `pactl` bash poll (the bar's most frequent
+// idle fork). PipeWire pushes changes, so `volume`/`muted` update instantly.
+//
+// Public API kept identical so AudioWidget + VolumePanel need no changes:
+//   volume (0-100), muted, refresh(), poll, interval.
+// refresh()/poll/interval are now inert (event-driven, nothing to poll).
+// portType was dropped — both consumers read it but never rendered it.
 Item {
     id: audio
 
-    property bool poll:     false   // auto-refresh on a timer when true
-    property int  interval: 3000
+    property bool poll:     false   // inert (kept for API compat)
+    property int  interval: 3000    // inert
 
-    property int    volume:   50
-    property bool   muted:    false
-    property string portType: "default"
+    // the system default output; tracked live via PwObjectTracker below
+    readonly property var sink: Pipewire.defaultAudioSink
 
-    function refresh() { proc.lines = []; proc.running = false; proc.running = true }
+    readonly property int  volume: (sink && sink.ready && sink.audio)
+                                   ? Math.round(sink.audio.volume * 100) : 0
+    readonly property bool muted:  (sink && sink.ready && sink.audio)
+                                   ? sink.audio.muted : false
 
-    Process {
-        id: proc
-        running: false
-        // one pactl call, exact sink match, real active port (the old grep -A80 could
-        // miss the port or bleed into the next sink's block — returned empty on some setups)
-        command: ["bash", "-c",
-            "export LC_ALL=C; def=$(pactl get-default-sink); " +
-            "pactl -f json list sinks 2>/dev/null | jq -r --arg n \"$def\" '.[]|select(.name==$n)|(.volume|to_entries[0].value.value_percent|rtrimstr(\"%\")),(if .mute then \"yes\" else \"no\" end),(.active_port // \"-\")'"
-        ]
-        stdout: SplitParser {
-            onRead: function(line) { proc.lines.push(line.trim()) }
-        }
-        onExited: {
-            if (proc.lines.length >= 2) {
-                audio.volume = parseInt(proc.lines[0]) || 0
-                audio.muted  = (proc.lines[1] === "yes")
-                var port = proc.lines[2] || ""
-                if (port.includes("headphone"))    audio.portType = "headphone"
-                else if (port.includes("headset")) audio.portType = "headset"
-                else                               audio.portType = "default"
-            }
-            proc.lines = []
-        }
-        property var lines: []
-    }
+    // kept so callers don't break; PipeWire is event-driven so there's nothing to do
+    function refresh() {}
 
-    Timer {
-        interval: audio.interval; running: audio.poll; repeat: true; triggeredOnStart: true
-        onTriggered: audio.refresh()
-    }
+    // binding a node here makes Quickshell track its audio props (volume/mute) live
+    PwObjectTracker { objects: audio.sink ? [audio.sink] : [] }
 }

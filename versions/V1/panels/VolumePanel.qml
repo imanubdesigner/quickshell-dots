@@ -20,7 +20,6 @@ PanelWindow {
     AudioData { id: audio }
     readonly property int    volume:   audio.volume
     readonly property bool   muted:    audio.muted
-    readonly property string portType: audio.portType
     property bool   micMuted: false
 
     // ── per-app mixer + device switcher state ──
