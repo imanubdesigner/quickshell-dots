@@ -54,8 +54,11 @@ git fetch --quiet origin 2>/dev/null || exit 0
 upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)" \
   || { clear_state; exit 0; }
 
-# Commits the upstream is ahead by that change THIS version's directory.
-behind="$(git rev-list --count "HEAD..$upstream" -- "versions/$ver/" 2>/dev/null || echo 0)"
+# Commits the upstream is ahead by that change the deployable payload: THIS
+# version's directory, or the companion pieces the post-update hook ships
+# (helper scripts / systemd units). Docs-only commits stay badge-free.
+payload=("versions/$ver/" "scripts/" "systemd/")
+behind="$(git rev-list --count "HEAD..$upstream" -- "${payload[@]}" 2>/dev/null || echo 0)"
 if [ "${behind:-0}" -eq 0 ]; then
   clear_state
   exit 0
@@ -63,7 +66,7 @@ fi
 
 # Short changelog. `git log --max-count` (no `head` in the pipe) — so a large
 # commit count can't SIGPIPE git and trip pipefail before the state is written.
-summary="$(git log --max-count=8 --format='%s' "HEAD..$upstream" -- "versions/$ver/" | jq -R . | jq -s .)"
+summary="$(git log --max-count=8 --format='%s' "HEAD..$upstream" -- "${payload[@]}" | jq -R . | jq -s .)"
 
 write_state "$(jq -nc \
   --argjson behind  "$behind" \
