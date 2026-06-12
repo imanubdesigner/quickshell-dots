@@ -90,11 +90,16 @@ cp -r "$REPO/versions/$ver/." "$stage/"
 printf '%s\n' "$ver" > "$stage/.qsrise"
 
 # Stop the bar before swapping, and WAIT for it to actually exit (don't trust a
-# fixed sleep). NB: pkill -x qs matches ALL qs instances (fine on this single-bar
-# system).
+# fixed sleep). Covers both launch styles: `qs -c bar` (daily use) and
+# `quickshell -p $DEST` (install.sh's first start) — a bar left running through
+# the swap would keep serving the old tree.
 if [ -z "${QS_SHELL_NO_RESTART:-}" ]; then
   pkill -x qs 2>/dev/null || true
-  for _ in $(seq 1 30); do pgrep -x qs >/dev/null 2>&1 || break; sleep 0.1; done
+  pkill -f "quickshell -p $DEST" 2>/dev/null || true
+  for _ in $(seq 1 30); do
+    pgrep -x qs >/dev/null 2>&1 || pgrep -f "quickshell -p $DEST" >/dev/null 2>&1 || break
+    sleep 0.1
+  done
 fi
 
 # Atomic swap with rollback. At every instant $DEST holds either the old or the
@@ -130,6 +135,14 @@ trap - EXIT              # $stage was renamed into place; nothing left to clean
 
 # 5. Mark up-to-date via an atomic state write (never delete).
 clear_state
+
+# 5b. Companion pieces (helper scripts, systemd units): refresh them from the
+#     pulled repo so a bar update is complete on its own — no manual install.sh
+#     re-run. Best-effort: a hiccup here never blocks the applied update.
+if [ -f "$REPO/scripts/qs-shell-post-update.sh" ]; then
+  bash "$REPO/scripts/qs-shell-post-update.sh" "$REPO" >/dev/null 2>&1 || \
+    note "Shell update" "Companion refresh incomplete — re-run install.sh if a widget misses its helper."
+fi
 
 # 6. Relaunch exactly how the user runs it. The Wayland session env is inherited
 #    via the chain bar → setsid → this script (so only ever call apply from the
