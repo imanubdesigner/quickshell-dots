@@ -2,11 +2,14 @@
 # Refreshes the AUR known-infected list for the updater's security gate.
 # Pulls the maintained (unpinned) Atomic Arch package list, validates it and
 # atomically replaces ~/.local/share/qs-aur-blacklist.txt.
+# Entries in the local supplement (qs-aur-blacklist.local.txt) are merged into
+# every refresh, so ad-hoc additions survive the periodic overwrite.
 # Fail-closed: any fetch/validation error keeps the previous list and exits
 # nonzero — the gate then keeps working from the last good copy.
 set -uo pipefail
 
 DEST="${QS_AUR_BLACKLIST_LIST:-$HOME/.local/share/qs-aur-blacklist.txt}"
+LOCAL="${QS_AUR_BLACKLIST_LOCAL:-$HOME/.local/share/qs-aur-blacklist.local.txt}"
 MIN_COUNT="${QS_GATE_MIN:-100}"   # a "list" below this is treated as bogus
 URLS=(
   "https://gist.githubusercontent.com/quantenProjects/3f768dce7331618310f016d975bf8547/raw/packages"
@@ -33,9 +36,21 @@ if [ "$count" -lt "$MIN_COUNT" ]; then
   exit 1
 fi
 
+# Merge the local supplement, sanitized exactly like the fetched payload.
+extra_count=0
+if [ -s "$LOCAL" ]; then
+  extra="$(tr -d '\042\047' < "$LOCAL" | tr ' \t,' '\n\n\n' \
+           | grep -E '^[a-zA-Z0-9][a-zA-Z0-9@._+-]*$' | sort -u)"
+  extra_count="$(printf '%s\n' "$extra" | grep -c . || true)"
+  if [ "$extra_count" -gt 0 ]; then
+    clean="$(printf '%s\n%s\n' "$clean" "$extra" | grep . | sort -u)"
+    count="$(printf '%s\n' "$clean" | grep -c . || true)"
+  fi
+fi
+
 mkdir -p "$(dirname "$DEST")"
 tmp="$(mktemp "$DEST.XXXXXX")" || exit 1
 printf '%s\n' "$clean" > "$tmp" || { rm -f "$tmp"; exit 1; }
 chmod 644 "$tmp"
 mv -f "$tmp" "$DEST"   # same directory ⇒ atomic rename
-echo "qs-aur-blacklist-fetch: $count packages → $DEST"
+echo "qs-aur-blacklist-fetch: $count packages → $DEST ($extra_count from local supplement)"

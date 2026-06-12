@@ -59,7 +59,7 @@ if [[ -f "$bindir/qs-arch-security-gate.sh" || -f "$bindir/qs-aur-blacklist-fetc
   systemctl --user stop qs-aur-blacklist-fetch.service >/dev/null 2>&1 || true
   rm -f "$unitdir"/qs-aur-blacklist-fetch.service "$unitdir"/qs-aur-blacklist-fetch.timer
   rm -f "$bindir"/qs-arch-security-gate.sh "$bindir"/qs-aur-blacklist-fetch.sh
-  rm -f "$HOME/.local/share/qs-aur-blacklist.txt"
+  rm -f "$HOME/.local/share/qs-aur-blacklist.txt" "$HOME/.local/share/qs-aur-blacklist.local.txt"
   systemctl --user daemon-reload >/dev/null 2>&1 || true
   systemctl --user reset-failed 'qs-aur-blacklist-fetch*' >/dev/null 2>&1 || true
   info "Removed ArchUpdater security gate (script, fetch timer, list)"
