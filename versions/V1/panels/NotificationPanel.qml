@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -160,13 +161,14 @@ PanelWindow {
         id: card
         width: 320
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.max(6, root.notifBarX)
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: notifPanel.reveal
         focus: root.notifVisible
 
@@ -230,7 +232,7 @@ PanelWindow {
                         required property var modelData
                         width: col.width
                         height: entryCol.implicitHeight + 16
-                        radius: 4
+                        radius: root.tileRadius
                         color: entryMa.containsMouse
                             ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
                             : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.05)
@@ -335,7 +337,7 @@ PanelWindow {
             // ── clear all ──
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 visible: notifPanel.pending.length > 0
                 readonly property bool hovered: clearMa.containsMouse
                 color: hovered ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)

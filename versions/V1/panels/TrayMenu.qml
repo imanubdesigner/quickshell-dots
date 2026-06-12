@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Wayland
 
@@ -48,13 +49,14 @@ PanelWindow {
         id: card
         width: 220
         height: col.implicitHeight + 16
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: parent ? Math.max(6, Math.min(root.trayMenuX, parent.width - width - 6)) : 6
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: trayMenu.reveal
         focus: root.trayMenuVisible
 
@@ -72,7 +74,7 @@ PanelWindow {
 
             // back row (only when inside a submenu)
             Rectangle {
-                width: parent.width; height: 24; radius: 4
+                width: parent.width; height: 24; radius: root.tileRadius
                 visible: trayMenu.menuStack.length > 1
                 color: backMa.containsMouse ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.10) : "transparent"
                 Text {
@@ -114,7 +116,7 @@ PanelWindow {
                     Rectangle {
                         visible: !entry.modelData.isSeparator
                         anchors.fill: parent
-                        radius: 4
+                        radius: root.tileRadius
                         color: (entryMa.containsMouse && entry.modelData.enabled)
                             ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.16) : "transparent"
                         Behavior on color { ColorAnimation { duration: 100 } }

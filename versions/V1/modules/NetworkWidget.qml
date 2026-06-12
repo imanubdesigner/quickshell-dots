@@ -64,11 +64,12 @@ Item {
     Rectangle {
         x: 0; anchors.verticalCenter: parent.verticalCenter
         width: Math.round(row.implicitWidth) + 18
-        height: 24
-        radius: 12
+        height: root.pillH
+        radius: root.pillRadius
         color: root.pill
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
     }
 
     Row {

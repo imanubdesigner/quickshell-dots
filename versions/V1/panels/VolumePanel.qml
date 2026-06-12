@@ -59,13 +59,14 @@ PanelWindow {
         id: card
         width: 280
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.volumeBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: volPanel.reveal
         focus: root.volVisible
 
@@ -166,7 +167,7 @@ PanelWindow {
                         readonly property bool isDef:   devTile.modelData.name === volPanel.defaultSink
                         readonly property bool hovered: devMa.containsMouse
                         width: parent.width
-                        height: 26; radius: 4
+                        height: 26; radius: root.tileRadius
                         color: isDef     ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                              : hovered    ? Qt.rgba(root.ink.r,  root.ink.g,  root.ink.b,  0.12)
                                           : Qt.rgba(root.ink.r,  root.ink.g,  root.ink.b,  0.06)
@@ -212,7 +213,7 @@ PanelWindow {
             // ── mute toggle ──
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 color: muteMa.containsMouse
                     ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                     : volPanel.muted ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.15)
@@ -353,7 +354,7 @@ PanelWindow {
 
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 color: micMuteMa.containsMouse
                     ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                     : volPanel.micMuted ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.15)
@@ -388,7 +389,7 @@ PanelWindow {
             // ── open audio ──
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 color: audioBtnMa.containsMouse ? Qt.lighter(root.seal, 1.15) : root.seal
                 Behavior on color { ColorAnimation { duration: 120 } }
                 Text {

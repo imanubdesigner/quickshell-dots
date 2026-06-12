@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 
 Item {
@@ -20,22 +21,39 @@ Item {
         running: ma.containsMouse || root.controlVisible
     }
 
+    // shadow as a SIBLING of the pill (the pill itself clips, for the wave —
+    // a shadow child would be clipped away). rootMod doesn't clip, so this shows.
+    RectangularShadow {
+        anchors.fill: pill
+        radius: pill.radius
+        visible: root.styleBorderless
+        blur: 8
+        spread: 0
+        offset: Qt.vector2d(0, root.barPosition === "bottom" ? -1 : 1)
+        color: root.pillShadow
+        z: -1
+    }
+
     // ── pill background (same style as other widgets) with the wave inside ──
     Rectangle {
         id: pill
         anchors.centerIn: parent
         width: logo.width + 18
-        height: 24
-        radius: 12
+        height: root.pillH
+        radius: root.pillRadius
         color: root.pill
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
         clip: true
 
         Canvas {
             id: wave
             anchors.fill: parent
-            opacity: 0.55
+            // only present while active (hovered or control panel open); fully
+            // gone when idle. Fades so it appears/disappears smoothly.
+            opacity: (ma.containsMouse || root.controlVisible) ? 0.55 : 0
+            visible: opacity > 0.001
+            Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
             onPaint: {
                 var ctx = getContext("2d")

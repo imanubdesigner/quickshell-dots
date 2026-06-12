@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -43,13 +44,14 @@ PanelWindow {
         id: card
         width: 320
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.cpuBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: cpuPanel.reveal
         focus: root.cpuVisible
 
@@ -203,7 +205,7 @@ PanelWindow {
             // ── button ──
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 color: btopMa.containsMouse ? Qt.lighter(root.seal, 1.15) : root.seal
                 Behavior on color { ColorAnimation { duration: 120 } }
                 Text {

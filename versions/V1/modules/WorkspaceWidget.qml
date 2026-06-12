@@ -8,6 +8,19 @@ Item {
     implicitWidth: wsRow.implicitWidth
     implicitHeight: 28
 
+    // The focused workspace's id ONLY when it's a real (positive) workspace beyond
+    // the persist range — else 0. An int signals on value change only, so switching
+    // between in-range workspaces does NOT renotify → workspaceList stays identical
+    // → the Repeater model is stable → the per-delegate width/colour Behaviors keep
+    // animating instead of the whole model rebuilding (B2). `id > n` (n≥5) also
+    // excludes negative special/scratchpad ids (B3).
+    readonly property int extraWs: {
+        if (root.workspaceMode === "active") return 0
+        var n = root.workspaceMode === "5" ? 5 : 10
+        var f = Hyprland.focusedWorkspace
+        return (f && f.id > n) ? f.id : 0
+    }
+
     readonly property var workspaceList: {
         if (root.workspaceMode === "active") {
             var ids = {}
@@ -18,17 +31,19 @@ Item {
         }
         var n = root.workspaceMode === "5" ? 5 : 10
         var list = []; for (var j = 1; j <= n; j++) list.push(j)
+        if (extraWs > 0) list.push(extraWs)   // focused-beyond-range, stable per id
         return list
     }
 
     Rectangle {
         x: -4; anchors.verticalCenter: parent.verticalCenter
         width: Math.round(wsRow.width) + 8
-        height: 24
-        radius: 12
+        height: root.pillH
+        radius: root.pillRadius
         color: root.pill
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
     }
 
     // right-click anywhere opens the workspace panel
@@ -48,8 +63,13 @@ Item {
             model: wsWidget.workspaceList
 
             delegate: Item {
+                id: wsCell
                 required property int modelData
                 readonly property int wsId: modelData
+
+                // hover feedback works in every style (the old code scaled the
+                // default-only `dot`, invisible in numbers/magic)
+                Behavior on scale { NumberAnimation { duration: 120 } }
 
                 readonly property bool isFocused: Hyprland.focusedWorkspace !== null
                                                && Hyprland.focusedWorkspace.id === wsId
@@ -63,15 +83,19 @@ Item {
 
                 readonly property bool isEmpty: !isFocused && !isOccupied
 
-                implicitWidth: isFocused ? 32 : 16
+                implicitWidth: root.workspaceStyle === "numbers" ? (isFocused ? 26 : 22)
+                             : root.workspaceStyle === "magic"   ? (isFocused ? 24 : 18)
+                             : (isFocused ? 32 : 16)
                 implicitHeight: 28
 
                 Behavior on implicitWidth {
                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
 
+                // ── DEFAULT style: glow + dot ──
                 // glow — alle states, nur opacity variiert
                 Rectangle {
+                    visible: root.workspaceStyle === "default"
                     anchors.centerIn: parent
                     width:  isFocused ? 34 : 16
                     height: isFocused ? 16 : 16
@@ -89,6 +113,7 @@ Item {
                 // pill / kreis
                 Rectangle {
                     id: dot
+                    visible: root.workspaceStyle === "default"
                     anchors.centerIn: parent
                     width:  isFocused  ? 26 : 8
                     height: 8
@@ -103,13 +128,50 @@ Item {
                     Behavior on color { ColorAnimation { duration: 200 } }
                 }
 
+                // ── NUMBERS style: a digit on a rounded badge (radius follows
+                //    the bar radius switch: round/12 ⇄ 5) ──
+                Rectangle {
+                    visible: root.workspaceStyle === "numbers"
+                    anchors.centerIn: parent
+                    width:  isFocused ? 26 : 22
+                    height: 20
+                    radius: root.styleRadiusSmall ? 5 : height / 2
+                    color: isFocused  ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.22)
+                         : isOccupied ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.14)
+                                      : Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.05)
+                    Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Text {
+                        anchors.centerIn: parent
+                        text: wsId
+                        color: (isFocused || isOccupied) ? root.seal
+                                                         : Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.4)
+                        font.family: root.mono
+                        font.pixelSize: 12
+                        font.weight: isFocused ? Font.Medium : Font.Normal
+                    }
+                }
+
+                // ── MAGIC style: sparkle glyphs (static) ──
+                Text {
+                    visible: root.workspaceStyle === "magic"
+                    anchors.centerIn: parent
+                    text: isFocused ? "✦" : isOccupied ? "✧" : "·"
+                    color: isFocused  ? root.seal
+                         : isOccupied ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.7)
+                                      : Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.3)
+                    font.family: root.mono
+                    font.pixelSize: isFocused ? 20 : 16
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                }
+
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
                     onClicked: root.gotoWorkspace(wsId)
-                    onEntered: dot.scale = 1.2
-                    onExited:  dot.scale = 1.0
+                    onEntered: wsCell.scale = 1.15
+                    onExited:  wsCell.scale = 1.0
                 }
             }
         }

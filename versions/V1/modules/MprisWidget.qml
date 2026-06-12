@@ -61,7 +61,6 @@ Item {
 
     implicitWidth: active ? (row.implicitWidth + 18) : (idleNote.implicitWidth + 16)
     implicitHeight: 28
-    clip: true
 
     Behavior on implicitWidth {
         NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -70,11 +69,12 @@ Item {
     Rectangle {
         x: 0; anchors.verticalCenter: parent.verticalCenter
         width: rootMod.active ? (Math.round(row.implicitWidth) + 18) : (Math.round(idleNote.implicitWidth) + 16)
-        height: 24
-        radius: 12
+        height: root.pillH
+        radius: root.pillRadius
         color: root.pill
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
     }
 
     // ── idle: a single music-note, clickable to open the no-song panel ──

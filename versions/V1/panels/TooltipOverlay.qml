@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "../modules"
 
 PanelWindow {
     id: overlay
@@ -37,13 +38,16 @@ PanelWindow {
             var cx = root.tooltipX;
             return Math.max(4, Math.min(parent.width - width - 4, cx - width / 2));
         }
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
 
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
         radius: 6
         opacity: overlay.reveal
+
+        // border-less style → drop the border, drop a dark shadow (same as pills)
+        PillShadow { theme: root }
 
         Text {
             id: tipLabel

@@ -153,13 +153,14 @@ PanelWindow {
         id: card
         width: 320
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.mprisBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: mprisPanel.reveal
         focus: root.mprisVisible
 

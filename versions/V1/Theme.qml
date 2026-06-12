@@ -35,6 +35,37 @@ Item {
     readonly property color warn:   seal
     readonly property color sep:    Qt.rgba(ink.r, ink.g, ink.b, 0.18)
 
+    // ── pill/card border (default, non-borderless mode) ──
+    // A premium "inactive window border" look: the surface tone (paper) nudged a
+    // tick toward the foreground (ink) → a quiet edge a touch brighter than the
+    // background, theme-aware in BOTH dark and light palettes. Tune via pillBorderMix.
+    property real pillBorderMix: 0.13
+    readonly property color pillBorder: Qt.rgba(
+        paper.r * (1 - pillBorderMix) + ink.r * pillBorderMix,
+        paper.g * (1 - pillBorderMix) + ink.g * pillBorderMix,
+        paper.b * (1 - pillBorderMix) + ink.b * pillBorderMix, 1.0)
+    // outer frame (the island edge against the wallpaper): a tick brighter than
+    // the inner pill border so the bar lifts off the background → two readable
+    // borders (subtle inner pills + a defined outer frame).
+    property real islandBorderMix: 0.16
+    readonly property color islandBorder: Qt.rgba(
+        paper.r * (1 - islandBorderMix) + ink.r * islandBorderMix,
+        paper.g * (1 - islandBorderMix) + ink.g * islandBorderMix,
+        paper.b * (1 - islandBorderMix) + ink.b * islandBorderMix, 1.0)
+
+    // ── bar style tokens (persisted; consumed by every widget pill surface) ──
+    // Single source for the pill recipe that is duplicated ~16× across modules.
+    // P1: tokens exist but NO surface consumes them yet → bar renders identical.
+    property bool styleBorderless:  false   // border 1px ⇄ box-shadow
+    property bool styleRadiusSmall: false   // radius 12 ⇄ 6
+    property bool styleHeightMin:   false   // inner pill 24 ⇄ 20 (slot stays 28)
+    readonly property int   pillRadius:   styleRadiusSmall ? 6 : 12
+    readonly property int   pillH:        styleHeightMin ? 20 : 24
+    readonly property int   pillBorderW:  styleBorderless ? 0 : 1
+    readonly property int   islandRadius: styleRadiusSmall ? 8 : 16
+    readonly property int   tileRadius:   pillRadius - 2   // inner panel buttons: 2 less than global (10 ⇄ 4)
+    readonly property color pillShadow:   Qt.rgba(0, 0, 0, 0.55)   // dark, theme-independent
+
     property string lastAppliedName: ""
 
     // ── Tooltip state ──
@@ -154,7 +185,8 @@ Item {
     property var  fnMergeAll:      null
     property var  fnDefaultLayout: null
     property bool splitsSubVisible: false
-    onControlVisibleChanged: if (!controlVisible) splitsSubVisible = false   // don't reopen with the panel
+    property bool wwSubVisible: false   // "Widgets & Workspaces" fly-out
+    onControlVisibleChanged: if (!controlVisible) { splitsSubVisible = false; wwSubVisible = false }   // don't reopen with the panel
 
     readonly property bool anySplit: splitLeft || splitRight || splitArch
                                   || splitMon  || splitNet  || splitMprisL
@@ -219,7 +251,6 @@ Item {
     Process { id: splitSaveProc }   // command is set imperatively in saveSplits()
 
     // ── module enable flags (controlled by ControlPanel) ──
-    property bool modWorkspace:  true
     property bool modStatus:     true
     property bool modMemory:     true
     property bool modCpu:        true
@@ -254,6 +285,11 @@ Item {
 
     // ── workspace display mode ──
     property string workspaceMode: "10"   // "10", "5", "active"
+    // ── workspace display style (orthogonal to mode; persisted) ──
+    property string workspaceStyle: "default"   // "default", "numbers", "magic"
+
+    // ── bar screen position (persisted) ──
+    property string barPosition: "top"   // "top" or "bottom"
 
     // ── picker visual style (theme/wallpaper/screenshot/video pickers) ──
     property string pickerStyle: "tanzaku"   // "tanzaku", "hearthstone", "carousel"
@@ -274,6 +310,11 @@ Item {
     onPickerStyleChanged:   if (_widgetsLoaded) saveWidgets()
     onWeatherImperialChanged: if (_widgetsLoaded) saveWidgets()
     onClock12hChanged:        if (_widgetsLoaded) saveWidgets()
+    onStyleBorderlessChanged:  if (_widgetsLoaded) saveWidgets()
+    onStyleRadiusSmallChanged: if (_widgetsLoaded) saveWidgets()
+    onStyleHeightMinChanged:   if (_widgetsLoaded) saveWidgets()
+    onWorkspaceStyleChanged:   if (_widgetsLoaded) saveWidgets()
+    onBarPositionChanged:      if (_widgetsLoaded) saveWidgets()
 
     function saveWidgets() {
         var line = (modMemory    ? "1" : "0") + " "
@@ -285,7 +326,12 @@ Item {
                  + pickerStyle + " "
                  + (weatherImperial ? "1" : "0") + " "
                  + (clock12h        ? "1" : "0") + " "
-                 + (modNetwork      ? "1" : "0")   // appended → old caches just keep the default
+                 + (modNetwork      ? "1" : "0") + " "
+                 + (styleBorderless  ? "1" : "0") + " "   // ↓ appended → old caches keep defaults
+                 + (styleRadiusSmall ? "1" : "0") + " "
+                 + (styleHeightMin   ? "1" : "0") + " "
+                 + workspaceStyle + " "
+                 + barPosition
         widgetSaveProc.command = ["bash", "-c",
             "echo '" + line + "' > '" + widgetsCachePath + "'"]
         widgetSaveProc.running = false
@@ -329,6 +375,22 @@ Item {
                     if (parts.length > wsField + 2) theme.weatherImperial = parts[wsField + 2] === "1"
                     if (parts.length > wsField + 3) theme.clock12h        = parts[wsField + 3] === "1"
                     if (parts.length > wsField + 4) theme.modNetwork      = parts[wsField + 4] === "1"
+                    // style tokens — appended after modNetwork, each guarded
+                    if (parts.length > wsField + 5) theme.styleBorderless  = parts[wsField + 5] === "1"
+                    if (parts.length > wsField + 6) theme.styleRadiusSmall = parts[wsField + 6] === "1"
+                    // field wsField+7 (styleHeightMin) is reserved for offset
+                    // stability only — the Height toggle was removed (plan §1.4), so
+                    // it is intentionally NOT parsed: a stray "1" must not shrink pills
+                    // when there is no UI to undo it. (saveWidgets still writes "0".)
+                    if (parts.length > wsField + 8) {
+                        var wss = parts[wsField + 8]
+                        if (wss === "numbers" || wss === "magic" || wss === "default")
+                            theme.workspaceStyle = wss
+                    }
+                    if (parts.length > wsField + 9) {
+                        var bp = parts[wsField + 9]
+                        if (bp === "top" || bp === "bottom") theme.barPosition = bp
+                    }
                 }
                 theme._widgetsLoaded = true
             }

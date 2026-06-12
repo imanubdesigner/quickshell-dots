@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "../modules"
 
 PanelWindow {
     id: ctrlPanel
@@ -18,7 +19,7 @@ PanelWindow {
 
     // power sub-menu starts CLOSED — no destructive tile is ever pre-shown
     property bool powerOpen: false
-    property bool widgetsOpen: false
+    property bool wsOpen: false   // Workspaces collapsible inside the WW fly-out
 
     property real reveal: root.controlVisible ? 1 : 0
     Behavior on reveal {
@@ -28,7 +29,7 @@ PanelWindow {
         }
     }
     visible: reveal > 0.001
-    onRevealChanged: if (reveal < 0.01) { powerOpen = false; widgetsOpen = false }  // reset when closed
+    onRevealChanged: if (reveal < 0.01) { powerOpen = false; wsOpen = false }  // reset when closed
     WlrLayershell.keyboardFocus: root.controlVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // ── reusable tile: neutral by default, highlights only on hover ──
@@ -38,7 +39,7 @@ PanelWindow {
         property bool active: false
         signal activated()
         height: 25
-        radius: 4
+        radius: root.tileRadius
         opacity: enabled ? 1.0 : 0.4          // built-in `enabled` also blocks input
         color: (active || _ma.containsMouse) ? Qt.rgba(accent.r, accent.g, accent.b, 0.18)
                                              : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
@@ -66,13 +67,14 @@ PanelWindow {
         id: card
         width: 240
         height: col.implicitHeight + 24
-        radius: 6
+        radius: ctrlPanel.reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.launcherBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: ctrlPanel.reveal
         focus: root.controlVisible
 
@@ -174,7 +176,7 @@ PanelWindow {
                         required property var modelData
                         readonly property bool on:      root.useThemeAccent === modelData.accent
                         readonly property bool hovered: _cma.containsMouse
-                        width: (col.width - 8) / 2; height: 25; radius: 4
+                        width: (col.width - 8) / 2; height: 25; radius: root.tileRadius
                         color: on     ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                              : hovered ? Qt.rgba(root.ink.r,  root.ink.g,  root.ink.b,  0.12)
                                        : Qt.rgba(root.ink.r,  root.ink.g,  root.ink.b,  0.06)
@@ -214,109 +216,15 @@ PanelWindow {
 
             Rectangle { width: parent.width; height: 1; color: root.sep }
 
-            // ── WIDGETS (collapsed toggle group) ──
+            // ── BAR FUNCTIONS (opens the fly-out sub-panel) ──
             Text {
-                text: "WIDGETS"
+                text: "BAR FUNCTIONS"
                 color: root.sumi; font.family: root.mono; font.pixelSize: 10; font.letterSpacing: 1
             }
             Tile {
                 width: parent.width
-                label: ctrlPanel.widgetsOpen ? "Widgets  ▾" : "Widgets  ▸"
-                onActivated: ctrlPanel.widgetsOpen = !ctrlPanel.widgetsOpen
-            }
-            Grid {
-                width: parent.width
-                columns: 2
-                columnSpacing: 8
-                rowSpacing: 8
-                visible: ctrlPanel.widgetsOpen
-
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Memory"
-                    active: root.modMemory
-                    onActivated: root.modMemory = !root.modMemory
-                }
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Brightness"
-                    visible: root.hasBacklight
-                    active: root.modBrightness
-                    onActivated: root.modBrightness = !root.modBrightness
-                }
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Claude"
-                    active: root.modClaude
-                    onActivated: root.modClaude = !root.modClaude
-                }
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Power Prof."
-                    active: root.modPower
-                    onActivated: root.modPower = !root.modPower
-                }
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Bluetooth"
-                    active: root.modBluetooth
-                    onActivated: root.modBluetooth = !root.modBluetooth
-                }
-                Tile {
-                    width: (col.width - 8) / 2
-                    label: "Network"
-                    active: root.modNetwork
-                    enabled: root.networkMode !== "wifi"   // can't hide while on WiFi
-                    onActivated: root.modNetwork = !root.modNetwork
-                }
-            }
-
-            Rectangle { width: parent.width; height: 1; color: root.sep }
-
-            // ── WORKSPACE display mode ──
-            Text {
-                text: "WORKSPACE"
-                color: root.sumi; font.family: root.mono; font.pixelSize: 10; font.letterSpacing: 1
-            }
-            Row {
-                id: wsRow
-                width: parent.width
-                spacing: 4
-                readonly property var opts: [
-                    { label: "Persist 10", mode: "10"     },
-                    { label: "Persist 5",  mode: "5"      },
-                    { label: "Active",     mode: "active" }
-                ]
-                Repeater {
-                    model: wsRow.opts
-                    delegate: Rectangle {
-                        id: wsTile
-                        required property var modelData
-                        readonly property bool on:      root.workspaceMode === modelData.mode
-                        readonly property bool hovered: wsMa.containsMouse
-                        width: (wsRow.width - wsRow.spacing * (wsRow.opts.length - 1)) / wsRow.opts.length
-                        height: 25; radius: 4
-                        color: on ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
-                                  : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
-                                            : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
-                        border.color: (on || hovered) ? root.seal : root.sep
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                        Text {
-                            anchors.centerIn: parent
-                            text: wsTile.modelData.label
-                            color: (wsTile.on || wsTile.hovered) ? root.seal : root.ink
-                            font.family: root.mono; font.pixelSize: 10
-                            font.weight: wsTile.on ? Font.Medium : Font.Normal
-                        }
-                        MouseArea {
-                            id: wsMa
-                            anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.workspaceMode = wsTile.modelData.mode
-                        }
-                    }
-                }
+                label: root.wwSubVisible ? "Bar Functions  ◂" : "Bar Functions  ▸"
+                onActivated: root.wwSubVisible = !root.wwSubVisible
             }
 
             Rectangle { width: parent.width; height: 1; color: root.sep }
@@ -343,7 +251,7 @@ PanelWindow {
                         readonly property bool on:      root.pickerStyle === modelData.mode
                         readonly property bool hovered: pickMa.containsMouse
                         width: (pickerRow.width - pickerRow.spacing * (pickerRow.opts.length - 1)) / pickerRow.opts.length
-                        height: 25; radius: 4
+                        height: 25; radius: root.tileRadius
                         color: on ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                   : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
                                             : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
@@ -374,17 +282,19 @@ PanelWindow {
     Rectangle {
         id: splitCard
         visible: root.controlVisible && root.splitsSubVisible
-        width: 180
+        width: 248
         height: splitCol.implicitHeight + 24
-        radius: 6
+        radius: (root.controlVisible && root.splitsSubVisible) ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
         // open to the right of the card, or to the left if there's no room
         x: (card.x + card.width + ctrlPanel.gap + width <= parent.width - 6)
            ? card.x + card.width + ctrlPanel.gap
            : card.x - ctrlPanel.gap - width
-        y: card.y
+        // bottom mode → bottom-align so a tall flyout grows UP, not into the bar
+        y: root.barPosition === "bottom" ? (card.y + card.height - height) : card.y
         opacity: ctrlPanel.reveal
 
         MouseArea { anchors.fill: parent; onClicked: {} }
@@ -425,7 +335,7 @@ PanelWindow {
                         readonly property bool on:      root.barAnim === modelData.mode || root.barAnim === modelData.alt
                         readonly property bool hovered: animMa.containsMouse
                         width: (animRow.width - animRow.spacing * (animRow.opts.length - 1)) / animRow.opts.length
-                        height: 25; radius: 4
+                        height: 25; radius: root.tileRadius
                         color: on ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                   : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
                                             : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
@@ -434,7 +344,7 @@ PanelWindow {
                         Behavior on color { ColorAnimation { duration: 120 } }
                         Text {
                             anchors.centerIn: parent
-                            text: root.barAnim === animTile.modelData.alt ? animTile.modelData.label + "2"
+                            text: root.barAnim === animTile.modelData.alt ? animTile.modelData.label + " 2"
                                                                           : animTile.modelData.label
                             color: (animTile.on || animTile.hovered) ? root.seal : root.ink
                             font.family: root.mono; font.pixelSize: 11
@@ -454,6 +364,172 @@ PanelWindow {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // ── WIDGETS & WORKSPACES sub-panel (fly-out; stacks below SPLITS if both open) ──
+    Rectangle {
+        id: wwCard
+        visible: root.controlVisible && root.wwSubVisible
+        width: 248
+        height: wwCol.implicitHeight + 24
+        radius: (root.controlVisible && root.wwSubVisible) ? root.pillRadius : 0
+        color: root.bg
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
+        // same side as splitCard; if SPLITS is also open, stack below it
+        x: (card.x + card.width + ctrlPanel.gap + width <= parent.width - 6)
+           ? card.x + card.width + ctrlPanel.gap
+           : card.x - ctrlPanel.gap - width
+        y: (root.controlVisible && root.splitsSubVisible)
+           ? (root.barPosition === "bottom" ? splitCard.y - ctrlPanel.gap - height
+                                            : splitCard.y + splitCard.height + ctrlPanel.gap)
+           : (root.barPosition === "bottom" ? card.y + card.height - height : card.y)
+        opacity: ctrlPanel.reveal
+
+        MouseArea { anchors.fill: parent; onClicked: {} }
+
+        Column {
+            id: wwCol
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
+
+            // ── WIDGETS toggle grid (moved here from the main card) ──
+            Text {
+                text: "WIDGETS"
+                color: root.sumi; font.family: root.mono; font.pixelSize: 10; font.letterSpacing: 1
+            }
+            Grid {
+                width: parent.width
+                columns: 2
+                columnSpacing: 8
+                rowSpacing: 8
+                Tile { width: (wwCol.width - 8) / 2; label: "Memory";      active: root.modMemory;    onActivated: root.modMemory = !root.modMemory }
+                Tile { width: (wwCol.width - 8) / 2; label: "Brightness";  visible: root.hasBacklight; active: root.modBrightness; onActivated: root.modBrightness = !root.modBrightness }
+                Tile { width: (wwCol.width - 8) / 2; label: "Claude";      active: root.modClaude;    onActivated: root.modClaude = !root.modClaude }
+                Tile { width: (wwCol.width - 8) / 2; label: "Power Prof."; active: root.modPower;     onActivated: root.modPower = !root.modPower }
+                Tile { width: (wwCol.width - 8) / 2; label: "Bluetooth";   active: root.modBluetooth; onActivated: root.modBluetooth = !root.modBluetooth }
+                Tile { width: (wwCol.width - 8) / 2; label: "Network";     active: root.modNetwork; enabled: root.networkMode !== "wifi"; onActivated: root.modNetwork = !root.modNetwork }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: root.sep }
+
+            // ── WORKSPACES (collapsible, like the old widgets group) ──
+            Tile {
+                width: parent.width
+                label: ctrlPanel.wsOpen ? "Workspaces  ▾" : "Workspaces  ▸"
+                onActivated: ctrlPanel.wsOpen = !ctrlPanel.wsOpen
+            }
+            Column {
+                width: parent.width
+                spacing: 8
+                visible: ctrlPanel.wsOpen
+
+                // display mode: persist 10 / persist 5 / active
+                Row {
+                    id: wsModeRow
+                    width: parent.width
+                    spacing: 4
+                    readonly property var opts: [
+                        { label: "Persist 10", mode: "10"     },
+                        { label: "Persist 5",  mode: "5"      },
+                        { label: "Active",     mode: "active" }
+                    ]
+                    Repeater {
+                        model: wsModeRow.opts
+                        delegate: Rectangle {
+                            id: wsmTile
+                            required property var modelData
+                            readonly property bool on:      root.workspaceMode === modelData.mode
+                            readonly property bool hovered: wsmMa.containsMouse
+                            width: (wsModeRow.width - wsModeRow.spacing * (wsModeRow.opts.length - 1)) / wsModeRow.opts.length
+                            height: 25; radius: root.tileRadius
+                            color: on ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
+                                      : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
+                                                : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
+                            border.color: (on || hovered) ? root.seal : root.sep
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: wsmTile.modelData.label
+                                color: (wsmTile.on || wsmTile.hovered) ? root.seal : root.ink
+                                font.family: root.mono; font.pixelSize: 10
+                                font.weight: wsmTile.on ? Font.Medium : Font.Normal
+                            }
+                            MouseArea { id: wsmMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.workspaceMode = wsmTile.modelData.mode }
+                        }
+                    }
+                }
+
+                // display style: default / numbers / magic
+                Row {
+                    id: wsStyleRow
+                    width: parent.width
+                    spacing: 4
+                    readonly property var opts: [
+                        { label: "Default", mode: "default" },
+                        { label: "Numbers", mode: "numbers" },
+                        { label: "Magic",   mode: "magic"   }
+                    ]
+                    Repeater {
+                        model: wsStyleRow.opts
+                        delegate: Rectangle {
+                            id: wssTile
+                            required property var modelData
+                            readonly property bool on:      root.workspaceStyle === modelData.mode
+                            readonly property bool hovered: wssMa.containsMouse
+                            width: (wsStyleRow.width - wsStyleRow.spacing * (wsStyleRow.opts.length - 1)) / wsStyleRow.opts.length
+                            height: 25; radius: root.tileRadius
+                            color: on ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
+                                      : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
+                                                : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
+                            border.color: (on || hovered) ? root.seal : root.sep
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: wssTile.modelData.label
+                                color: (wssTile.on || wssTile.hovered) ? root.seal : root.ink
+                                font.family: root.mono; font.pixelSize: 10
+                                font.weight: wssTile.on ? Font.Medium : Font.Normal
+                            }
+                            MouseArea { id: wssMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.workspaceStyle = wssTile.modelData.mode }
+                        }
+                    }
+                }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: root.sep }
+
+            // ── STYLE (bar pill style; paint-only, width-invariant) ──
+            Text {
+                text: "STYLE"
+                color: root.sumi; font.family: root.mono; font.pixelSize: 10; font.letterSpacing: 1
+            }
+            Row {
+                width: parent.width; spacing: 4
+                Tile { width: (wwCol.width - 4) / 2; label: "Borders"; active: !root.styleBorderless; onActivated: root.styleBorderless = false }
+                Tile { width: (wwCol.width - 4) / 2; label: "Shadow";  active: root.styleBorderless;  onActivated: root.styleBorderless = true }
+            }
+            Row {
+                width: parent.width; spacing: 4
+                Tile { width: (wwCol.width - 4) / 2; label: "Radius 12"; active: !root.styleRadiusSmall; onActivated: root.styleRadiusSmall = false }
+                Tile { width: (wwCol.width - 4) / 2; label: "Radius 6";  active: root.styleRadiusSmall;  onActivated: root.styleRadiusSmall = true }
+            }
+
+            // ── POSITION (bar on top or bottom edge) ──
+            Text {
+                text: "POSITION"
+                color: root.sumi; font.family: root.mono; font.pixelSize: 10; font.letterSpacing: 1
+            }
+            Row {
+                width: parent.width; spacing: 4
+                Tile { width: (wwCol.width - 4) / 2; label: "Top";    active: root.barPosition === "top";    onActivated: root.barPosition = "top" }
+                Tile { width: (wwCol.width - 4) / 2; label: "Bottom"; active: root.barPosition === "bottom"; onActivated: root.barPosition = "bottom" }
             }
         }
     }

@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -41,13 +42,14 @@ PanelWindow {
         id: card
         width: 220
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.powerBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: profilePanel.reveal
         focus: root.powerProfileVisible
 
@@ -114,7 +116,7 @@ PanelWindow {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 4
+                        radius: root.tileRadius
                         color: ma.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                : isActive ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.2)
                                : "transparent"

@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -46,13 +47,14 @@ PanelWindow {
         id: card
         width: 300
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.bluetoothBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: btPanel.reveal
         focus: root.bluetoothVisible
 
@@ -149,7 +151,7 @@ PanelWindow {
             Rectangle {
                 visible: btPanel.btOn
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 readonly property bool hovered: scanMa.containsMouse
                 color: btPanel.scanning ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                        : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
@@ -185,7 +187,7 @@ PanelWindow {
                         required property var modelData
                         readonly property bool hovered: devMa.containsMouse
                         width: col.width
-                        height: 30; radius: 4
+                        height: 30; radius: root.tileRadius
                         color: modelData.connected ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.15)
                                : hovered ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.12)
                                : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.05)
@@ -247,7 +249,7 @@ PanelWindow {
 
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4
+                height: 28; radius: root.tileRadius
                 color: btSetMa.containsMouse ? Qt.lighter(root.seal, 1.15) : root.seal
                 Behavior on color { ColorAnimation { duration: 120 } }
                 Text { anchors.centerIn: parent; text: "Bluetooth settings"; color: root.paper; font.family: root.mono; font.pixelSize: 11 }

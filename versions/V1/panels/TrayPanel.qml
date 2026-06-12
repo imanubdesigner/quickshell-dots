@@ -1,4 +1,5 @@
 import Quickshell
+import "../modules"
 import Quickshell.Services.SystemTray
 import Quickshell.Wayland
 import QtQuick
@@ -37,13 +38,14 @@ PanelWindow {
         id: card
         width: popupW
         height: col.implicitHeight + 24
-        radius: 6
+        radius: root.trayVisible ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.max(6, root.trayBarX)
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         focus: root.trayVisible
 
         Keys.onPressed: function(event) {
@@ -97,7 +99,7 @@ PanelWindow {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 4
+                        radius: root.tileRadius
                         color: ma.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18) : "transparent"
                         border.color: ma.containsMouse ? root.seal : "transparent"
                         border.width: ma.containsMouse ? 1 : 0

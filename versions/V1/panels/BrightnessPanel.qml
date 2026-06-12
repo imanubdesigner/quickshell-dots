@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -36,13 +37,14 @@ PanelWindow {
         id: card
         width: 280
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.brightnessBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: briPanel.reveal
         focus: root.brightnessVisible
 
@@ -121,7 +123,7 @@ PanelWindow {
                 spacing: 8
                 Rectangle {
                     id: btnDown
-                    width: (parent.width - 8) / 2; height: 28; radius: 4
+                    width: (parent.width - 8) / 2; height: 28; radius: root.tileRadius
                     color: _dn.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                              : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.08)
                     border.color: _dn.containsMouse ? root.seal : root.sep
@@ -141,7 +143,7 @@ PanelWindow {
                 }
                 Rectangle {
                     id: btnUp
-                    width: (parent.width - 8) / 2; height: 28; radius: 4
+                    width: (parent.width - 8) / 2; height: 28; radius: root.tileRadius
                     color: _up.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                              : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.08)
                     border.color: _up.containsMouse ? root.seal : root.sep

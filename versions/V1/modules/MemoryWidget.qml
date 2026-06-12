@@ -9,7 +9,6 @@ Item {
     visible: implicitWidth > 0.5
     implicitWidth: root.modMemory ? row.implicitWidth + 18 : 0
     implicitHeight: 28
-    clip: true
     opacity: root.modMemory ? 1 : 0
 
     Behavior on implicitWidth { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -23,11 +22,12 @@ Item {
     Rectangle {
         x: 0; anchors.verticalCenter: parent.verticalCenter
         width: Math.round(row.width) + 18
-        height: 24
-        radius: 12
+        height: root.pillH
+        radius: root.pillRadius
         color: root.pill
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
     }
 
     Row {

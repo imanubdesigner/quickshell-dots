@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -89,13 +90,14 @@ PanelWindow {
         id: card
         width: 300
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.networkBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: netPanel.reveal
         focus: root.networkVisible
 
@@ -276,7 +278,7 @@ PanelWindow {
                         delegate: Rectangle {
                             required property var modelData
                             width: netList.width
-                            height: 30; radius: 4
+                            height: 30; radius: root.tileRadius
                             color: nma.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                    : modelData.conn ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.15)
                                    : "transparent"
@@ -384,7 +386,7 @@ PanelWindow {
             // ── button ──
             Rectangle {
                 width: parent.width
-                height: 28; radius: 4; color: root.seal
+                height: 28; radius: root.tileRadius; color: root.seal
                 Text { anchors.centerIn: parent; text: "Network settings"; color: root.paper; font.family: root.mono; font.pixelSize: 11 }
                 MouseArea {
                     anchors.fill: parent; cursorShape: Qt.PointingHandCursor

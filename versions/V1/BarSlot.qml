@@ -18,12 +18,20 @@ PanelWindow {
     // ALWAYS screen-tall → window never resizes → NO compositor resize animation.
     // Reserve 35px via exclusiveZone; the mask limits the INPUT region: only the bar
     // strip when locked (clicks below pass through), full screen when unlocked (drag).
-    anchors { top: true; left: true; right: true }
+    // anchored to left+right always; top OR bottom by barPosition (exclusiveZone
+    // reserves space on whichever edge is anchored → no extra logic needed)
+    anchors {
+        left: true; right: true
+        top:    barSlot.root.barPosition === "top"
+        bottom: barSlot.root.barPosition === "bottom"
+    }
     implicitHeight: barSlot.screen ? barSlot.screen.height : 1440
     exclusionMode: ExclusionMode.Normal
-    exclusiveZone: 38        // 35 bar + 3px breathing room below it
+    exclusiveZone: 38        // 35 bar + 3px breathing room
     mask: Region {
-        x: 0; y: 0
+        x: 0
+        y: barSlot.root.barUnlocked ? 0
+           : (barSlot.root.barPosition === "bottom" ? barSlot.height - 35 : 0)
         width: barSlot.width
         height: barSlot.root.barUnlocked ? barSlot.height : 35
     }
@@ -219,8 +227,9 @@ PanelWindow {
             implicitHeight: 28
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.implicitWidth; height: 24; radius: 12
-                color: barSlot.root.pill; border.color: barSlot.root.sep; border.width: 1
+                width: parent.implicitWidth; height: barSlot.root.pillH; radius: barSlot.root.pillRadius
+                color: barSlot.root.pill; border.color: barSlot.root.pillBorder; border.width: barSlot.root.pillBorderW
+                PillShadow { theme: barSlot.root }
             }
             Row {
                 id: statusRow
@@ -245,8 +254,9 @@ PanelWindow {
             implicitHeight: 28
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.implicitWidth; height: 24; radius: 12
-                color: barSlot.root.pill; border.color: barSlot.root.sep; border.width: 1
+                width: parent.implicitWidth; height: barSlot.root.pillH; radius: barSlot.root.pillRadius
+                color: barSlot.root.pill; border.color: barSlot.root.pillBorder; border.width: barSlot.root.pillBorderW
+                PillShadow { theme: barSlot.root }
             }
             Row {
                 id: centerRow
@@ -296,8 +306,9 @@ PanelWindow {
             implicitHeight: 28
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.implicitWidth; height: 24; radius: 12
-                color: barSlot.root.pill; border.color: barSlot.root.sep; border.width: 1
+                width: parent.implicitWidth; height: barSlot.root.pillH; radius: barSlot.root.pillRadius
+                color: barSlot.root.pill; border.color: barSlot.root.pillBorder; border.width: barSlot.root.pillBorderW
+                PillShadow { theme: barSlot.root }
             }
             Row {
                 id: qcRow
@@ -396,7 +407,7 @@ PanelWindow {
                 // drop-target highlight (the group under the cursor, not the source)
                 Rectangle {
                     anchors.fill: parent
-                    radius: 12
+                    radius: barSlot.root.pillRadius
                     color: Qt.rgba(barSlot.accent.r, barSlot.accent.g, barSlot.accent.b, 0.18)
                     border.color: barSlot.accent
                     border.width: 2
@@ -434,12 +445,15 @@ PanelWindow {
 
     Item {
         id: island
+        // vertical placement via y (NOT conditional top/bottom anchors): toggling
+        // anchors live left a stale edge set → island stretched top+bottom → widgets
+        // spread to mid-screen. A plain y switches cleanly on a live position change.
         anchors {
-            top: parent.top; topMargin: 3
             left: parent.left; leftMargin: 5
             right: parent.right; rightMargin: 5
         }
         height: 32
+        y: barSlot.root.barPosition === "bottom" ? (parent.height - height - 3) : 3
         z: 2                                  // above the dim backdrop
         focus: barSlot.root.barUnlocked       // receive keys while unlocked
         Keys.onEscapePressed: barSlot.root.barUnlocked = false
@@ -448,7 +462,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3
-            radius: 18
+            radius: barSlot.root.islandRadius + 2
             color: "transparent"
             border.color: barSlot.accent
             border.width: barSlot.root.barUnlocked ? 1 : 0    // width 0 hides it when locked
@@ -575,10 +589,11 @@ PanelWindow {
                 x: modelData.x
                 width: Math.max(0, modelData.w)
                 height: island.height
-                radius: 16
+                radius: barSlot.root.islandRadius
                 color: barSlot.root.bg
-                border.color: barSlot.root.sep
-                border.width: 1
+                border.color: barSlot.root.islandBorder
+                border.width: barSlot.root.pillBorderW
+                PillShadow { theme: barSlot.root }
                 // no Behavior: tracks the slot positions directly as the gap opens
             }
         }

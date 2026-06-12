@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Wayland
 
@@ -34,13 +35,14 @@ PanelWindow {
         id: card
         width: 280
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round((parent.width - width) / 2)
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: calPopup.reveal
         focus: root.calendarVisible
 
@@ -68,7 +70,7 @@ PanelWindow {
                 Rectangle {
                     id: prevBtn
                     anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-                    width: 24; height: 24; radius: 4
+                    width: 24; height: 24; radius: root.tileRadius
                     color: prevMa.containsMouse ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.10) : "transparent"
                     Behavior on color { ColorAnimation { duration: 120 } }
                     Text {
@@ -108,7 +110,7 @@ PanelWindow {
                 Rectangle {
                     id: nextBtn
                     anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                    width: 24; height: 24; radius: 4
+                    width: 24; height: 24; radius: root.tileRadius
                     color: nextMa.containsMouse ? Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.10) : "transparent"
                     Behavior on color { ColorAnimation { duration: 120 } }
                     Text {

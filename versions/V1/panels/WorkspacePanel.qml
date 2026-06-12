@@ -1,4 +1,5 @@
 import QtQuick
+import "../modules"
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -32,13 +33,14 @@ PanelWindow {
         id: card
         width: 240
         height: col.implicitHeight + 24
-        radius: 6
+        radius: reveal > 0.001 ? root.pillRadius : 0
         color: root.bg
-        border.color: root.sep
-        border.width: 1
+        border.color: root.pillBorder
+        border.width: root.pillBorderW
+        PillShadow { theme: root }
 
         x: Math.round(Math.max(6, Math.min(root.workspaceBarX - width / 2, parent.width - width - 6)))
-        y: barBottom + gap
+        y: root.barPosition === "bottom" ? (parent.height - barBottom - gap - height) : (barBottom + gap)
         opacity: wsPanel.reveal
         focus: root.workspaceVisible
 
@@ -83,7 +85,7 @@ PanelWindow {
                         required property var modelData
                         readonly property bool isActive: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === modelData.id
                         width: col.width
-                        height: 30; radius: 4
+                        height: 30; radius: root.tileRadius
                         color: ma.containsMouse ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
                                 : isActive ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.15)
                                 : "transparent"
