@@ -75,6 +75,11 @@ The bar launches immediately so you can try it. Your previous config is backed
 up to `~/.config/quickshell/bar.bak.<timestamp>` automatically (older backups
 are kept).
 
+> **Keep it across reboots:** the install starts the bar for the current
+> session only — after a reboot Omarchy brings back its stock Waybar. Add the
+> post-boot hook from [Autostart](#autostart) once and the bar (with all your
+> settings — they persist in `~/.cache/quickshell_*`) is back at every login.
+
 ## Usage
 
 ### Click bindings
@@ -138,9 +143,10 @@ your launcher everywhere else — only these two keys change.
 
 ### Autostart
 <details>
-<summary>Post-boot hook (opt-in)</summary>
+<summary>Post-boot hook (recommended — brings the bar back at every login)</summary>
 
 ```bash
+mkdir -p ~/.config/omarchy/hooks/post-boot.d
 curl -fsSL -o ~/.config/omarchy/hooks/post-boot.d/quickshell-rise \
   https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/contrib/post-boot.d/quickshell-rise
 chmod +x ~/.config/omarchy/hooks/post-boot.d/quickshell-rise
