@@ -14,7 +14,10 @@ Item {
     property real phase: 0
     NumberAnimation on phase {
         from: 0; to: 2 * Math.PI
-        duration: 2600; loops: Animation.Infinite; running: true
+        duration: 2600; loops: Animation.Infinite
+        // gate: only animate while hovered or control panel open — otherwise the
+        // Canvas repainted 24/7 via onPhaseChanged even when nobody looks
+        running: ma.containsMouse || root.controlVisible
     }
 
     // ── pill background (same style as other widgets) with the wave inside ──
@@ -90,6 +93,7 @@ Item {
     TooltipMixin { id: tip; root: rootMod.root; owner: rootMod; text: rootMod.tooltipText }
 
     MouseArea {
+        id: ma
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
