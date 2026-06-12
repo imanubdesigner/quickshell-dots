@@ -10,75 +10,6 @@
 
 </div>
 
-## Usability
-<details>
-
-- **Omarchy-based.** Integrates the `omarchy-*` helpers (wifi/bluetooth/audio launchers, update, screen recorder, voxtype) and reads the active Omarchy theme.
-- Built for Omarchy / Hyprland — not for plain setups without Omarchy.
-- **Omarchy version:** built for classic Omarchy (Waybar-based, ~3.8.x), where the menu keybinds call `omarchy-menu`. On Omarchy 4.0.0 (the Quickshell-based *omarchy-shell*) you'd disable the built-in shell bar to avoid running two bars, and the theme/wallpaper/menu/launcher are invoked differently — adjust the keybinds you pull from here accordingly.
-
-</details>
-
-## Dependencies
-<details>
-
-Comes with Omarchy: Hyprland, the `omarchy-*` helpers, fonts (JetBrainsMono Nerd Font + Material Symbols Rounded), mako.
-
-Extra:
-```bash
-sudo pacman -S quickshell git jq curl ttf-jetbrains-mono-nerd ttf-material-symbols-variable
-```
-Optional per widget: `pamixer`, `brightnessctl`, `power-profiles-daemon`, `bluez`, `iwd` + `impala`, `hypridle`, `gpu-screen-recorder`, `voxtype`.
-
-</details>
-
-## Structure
-<details>
-
-Each folder under `versions/` is a complete, self-contained bar.
-
-```
-versions/V1/
-├── shell.qml        # entry point
-├── Bar.qml          # layout + dynamic split pills
-├── Theme.qml        # colors, state, flags
-├── Palette.js       # reads Omarchy colors.toml
-├── IconMap.js       # icon name → codepoint
-├── assets/          # logo
-├── modules/         # bar widgets  (*Widget.qml)
-└── panels/          # popups       (*Panel.qml, TooltipOverlay)
-```
-
-</details>
-
-## Uninstall
-<details>
-
-One command (works for any installed version) — stops the bar, removes theme hook and post-boot hook, and brings back your previous config from the backup:
-```bash
-curl -fsSL https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/uninstall.sh | bash
-```
-Every install also backs up the old config to `~/.config/quickshell/bar.bak.<timestamp>` (older backups are kept).
-
-</details>
-
-## Autostart
-<details>
-<summary>Post-boot hook (opt-in)</summary>
-
-```bash
-curl -fsSL -o ~/.config/omarchy/hooks/post-boot.d/quickshell-rise \
-  https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/contrib/post-boot.d/quickshell-rise
-chmod +x ~/.config/omarchy/hooks/post-boot.d/quickshell-rise
-```
-Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
-</details>
-
-## Quickshell setup for Omarchy (Waybar-based, ~3.8.x)
-
-
-
-
 <table>
   <tr>
     <td align="center"><b>Theme Picker</b></td>
@@ -92,37 +23,61 @@ Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
   </tr>
 </table>
 
-
-
-
-
-##### Features
-<details>
+## Features
 
 | Module | Function |
 |---|---|
 | Unlock &amp; reorder ✨ | unlock the bar → drag whole widget-groups to swap positions · persistent |
 | Image pickers ✨ | theme · wallpaper · screenshots · videos — 3 selectable styles: Tanzaku · Hearthstone · Carousel (cached thumbnails + instant reopen) |
+| Self-update ✨ | in-bar badge when a new version ships → one-click update &amp; restart |
+| Package updates ✨ | system + AUR counter with a pre-install security check against the known-infected AUR list (auto-refreshed weekly) |
 | Workspaces | switch · overview · persist 10 / 5 / active-only ✨ |
 | Weather | current conditions · °C / °F (imperial/metric) toggle ✨ |
 | Clock | time · calendar · 24h / 12h toggle ✨ |
 | Mpris | media controls |
 | System monitors | CPU · RAM · battery (health · cycles · size · draw ✨) · net · bt |
 | Control center | quick toggles · power · widget toggles ✨ · workspace mode ✨ · picker style ✨ |
-| Keybind IPC ✨ | `qs -c bar ipc call picker theme\|wallpaper\|screenshots\|videos` |
 | Split groups ✨ | positional pill splits + gap animations (Stream · Surge · Bolt · Bolt 2) |
+| Keybind IPC ✨ | `qs -c bar ipc call picker theme\|wallpaper\|screenshots\|videos` |
 | Per-widget panels | click widget → popup |
 
-> ✨ = new in v2.0.0 – v2.1.0
+> ✨ = new in v2.x
 
-</details>
+## Requirements
 
-##### Install command (copy & paste in your terminal):
+Built for **Omarchy / Hyprland** — not for plain setups without Omarchy. The bar
+integrates the `omarchy-*` helpers (wifi/bluetooth/audio launchers, update,
+screen recorder, voxtype) and follows the active Omarchy theme.
+
+> **Omarchy version:** built for classic Omarchy (Waybar-based, ~3.8.x), where
+> the menu keybinds call `omarchy-menu`. On Omarchy 4.0.0 (the Quickshell-based
+> *omarchy-shell*) you'd disable the built-in shell bar to avoid running two
+> bars, and the theme/wallpaper/menu/launcher are invoked differently — adjust
+> the keybinds you pull from here accordingly.
+
+Comes with Omarchy: Hyprland, the `omarchy-*` helpers, fonts (JetBrainsMono
+Nerd Font + Material Symbols Rounded), mako. Extra:
+
+```bash
+sudo pacman -S quickshell git jq curl ttf-jetbrains-mono-nerd ttf-material-symbols-variable
+```
+
+Optional per widget: `pamixer`, `brightnessctl`, `power-profiles-daemon`,
+`bluez`, `iwd` + `impala`, `hypridle`, `gpu-screen-recorder`, `voxtype`.
+
+## Install
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/install.sh | bash -s V1
 ```
-The bar launches immediately so you can try it.
-##### Click bindings
+
+The bar launches immediately so you can try it. Your previous config is backed
+up to `~/.config/quickshell/bar.bak.<timestamp>` automatically (older backups
+are kept).
+
+## Usage
+
+### Click bindings
 <details>
 
 Default: left-click opens the widget panel. Exceptions:
@@ -141,11 +96,12 @@ Default: left-click opens the widget panel. Exceptions:
 | Tray (bar) | toggle tray panel | — | — | — |
 | Tray icon | activate | context menu | hide icon | — |
 
-**Double-click** an empty bar area → unlock &amp; drag widget-groups to reorder (`Esc` / click the dimmed backdrop to lock).
+**Double-click** an empty bar area → unlock &amp; drag widget-groups to reorder
+(`Esc` / click the dimmed backdrop to lock).
 
 </details>
 
-##### Keybindings — theme / wallpaper picker on the Omarchy hotkeys (optional)
+### Keybindings — theme / wallpaper picker on the Omarchy hotkeys (optional)
 <details>
 
 Omarchy binds its theme/wallpaper menus (shown via walker) to:
@@ -155,7 +111,9 @@ Omarchy binds its theme/wallpaper menus (shown via walker) to:
 | Theme | `Super`+`Shift`+`Ctrl`+`Space` | `omarchy-menu theme` |
 | Wallpaper | `Super`+`Ctrl`+`Space` | `omarchy-menu background` |
 
-To make those keys open the bar's own pickers instead (and unbind walker for them), add this to **your own** `~/.config/hypr/bindings.conf` — Omarchy sources it *after* its defaults, so it survives `omarchy update`:
+To make those keys open the bar's own pickers instead (and unbind walker for
+them), add this to **your own** `~/.config/hypr/bindings.conf` — Omarchy
+sources it *after* its defaults, so it survives `omarchy update`:
 
 ```conf
 # quickshell-dots: route the theme/wallpaper hotkeys to the bar's pickers
@@ -165,19 +123,68 @@ bindd  = SUPER SHIFT CTRL, SPACE, Theme picker,     exec, qs -c bar ipc call pic
 bindd  = SUPER CTRL, SPACE,       Wallpaper picker, exec, qs -c bar ipc call picker wallpaper
 ```
 
-Then `hyprctl reload`. The `unbind` lines stop walker's menu from *also* firing on those keys; delete the block to restore the Omarchy default. Walker stays your launcher everywhere else — only these two keys change.
+Then `hyprctl reload`. The `unbind` lines stop walker's menu from *also* firing
+on those keys; delete the block to restore the Omarchy default. Walker stays
+your launcher everywhere else — only these two keys change.
 
-> Different Omarchy version? Check `~/.local/share/omarchy/default/hypr/bindings/utilities.conf` for the `omarchy-menu theme` / `omarchy-menu background` lines and match whatever keys are bound there.
+> Different Omarchy version? Check
+> `~/.local/share/omarchy/default/hypr/bindings/utilities.conf` for the
+> `omarchy-menu theme` / `omarchy-menu background` lines and match whatever
+> keys are bound there.
 
 (Also available: `qs -c bar ipc call picker screenshots` and `… videos`.)
 
 </details>
-<!-- drag a screenshot here on GitHub to embed it -->
 
+### Autostart
+<details>
+<summary>Post-boot hook (opt-in)</summary>
 
+```bash
+curl -fsSL -o ~/.config/omarchy/hooks/post-boot.d/quickshell-rise \
+  https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/contrib/post-boot.d/quickshell-rise
+chmod +x ~/.config/omarchy/hooks/post-boot.d/quickshell-rise
+```
 
+Remove: `rm -f ~/.config/omarchy/hooks/post-boot.d/quickshell-rise`
 
+</details>
 
+## Updating
 
+The bar keeps itself current: an update badge appears in the bar when a new
+version is released — click it to review the changes and apply with one click.
 
+Package updates run through the ArchUpdater panel with a per-package verdict
+(OK · review · blocked) checked against the known-infected AUR list, which a
+weekly timer keeps up to date. Blocked packages are excluded from the update
+command automatically.
 
+## Uninstall
+
+One command (works for any installed version) — stops the bar, removes the
+theme hook, post-boot hook and timers, and brings back your previous config
+from the backup:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HANCORE-linux/quickshell-dots/main/uninstall.sh | bash
+```
+
+## Repo structure
+<details>
+
+Each folder under `versions/` is a complete, self-contained bar.
+
+```
+versions/V1/
+├── shell.qml        # entry point
+├── Bar.qml          # layout + dynamic split pills
+├── Theme.qml        # colors, state, flags
+├── Palette.js       # reads Omarchy colors.toml
+├── IconMap.js       # icon name → codepoint
+├── assets/          # logo
+├── modules/         # bar widgets  (*Widget.qml)
+└── panels/          # popups       (*Panel.qml, TooltipOverlay)
+```
+
+</details>
