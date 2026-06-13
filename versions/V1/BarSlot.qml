@@ -363,7 +363,7 @@ PanelWindow {
                 required property int index
                 // workspace draws a pill 4px wider than its implicitWidth on each
                 // side; pad its slot symmetrically so inter-group gaps stay uniform.
-                readonly property int pad: slot.gid === "G2" ? 4 : 0
+                readonly property int pad: slot.gid === "G2" ? barSlot.root.wsPillPad : 0
                 readonly property bool hasContent: Math.round(ldr.implicitWidth) > 0.5
                 readonly property bool hasGapAfter: splitsArr ? (index < splitsArr.length) : false
                 // split AFTER this slot → grow it so the group separates (gap opens).

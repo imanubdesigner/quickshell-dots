@@ -36,8 +36,8 @@ Item {
     }
 
     Rectangle {
-        x: -4; anchors.verticalCenter: parent.verticalCenter
-        width: Math.round(wsRow.width) + 8
+        x: -root.wsPillPad; anchors.verticalCenter: parent.verticalCenter
+        width: Math.round(wsRow.width) + 2 * root.wsPillPad
         height: root.pillH
         radius: root.pillRadius
         color: root.pill

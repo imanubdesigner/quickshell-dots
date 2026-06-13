@@ -66,6 +66,12 @@ Item {
     readonly property int   pillBorderW:  styleBorder ? 1 : 0
     readonly property int   islandRadius: styleRadiusSmall ? 8 : 16
     readonly property int   tileRadius:   pillRadius - 2   // inner panel buttons: 2 less than global (10 ⇄ 4)
+    // horizontal padding of the workspace pill (overhang each side, mirrored by the
+    // G2 slot pad). In "numbers" the wide digit badges should nestle concentrically
+    // into the pill's inner radius → pad = pillRadius - badgeRadius; else a fixed 4.
+    readonly property int   wsPillPad:    workspaceStyle === "numbers"
+                                          ? Math.max(1, pillRadius - (styleRadiusSmall ? 5 : 10))
+                                          : 4
     readonly property color pillShadow:   Qt.rgba(0, 0, 0, 0.55)   // dark, theme-independent
 
     property string lastAppliedName: ""
