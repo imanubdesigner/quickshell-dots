@@ -53,9 +53,9 @@ Item {
         paper.g * (1 - islandBorderMix) + ink.g * islandBorderMix,
         paper.b * (1 - islandBorderMix) + ink.b * islandBorderMix, 1.0)
 
-    // ── bar style tokens (persisted; consumed by every widget pill surface) ──
-    // Single source for the pill recipe that is duplicated ~16× across modules.
-    // P1: tokens exist but NO surface consumes them yet → bar renders identical.
+    // ── bar style tokens (persisted; consumed by every pill/card surface) ──
+    // Single source for the pill recipe; consumed by 37 surfaces (12 widgets +
+    // 3 group pills + island + 20 cards + tooltip) — change the recipe here once.
     // border on/off and shadow on/off are INDEPENDENT (4 combos possible).
     property bool styleBorder:      true    // pill/card 1px border on/off
     property bool styleShadow:      false   // box-shadow on/off
@@ -315,7 +315,6 @@ Item {
     onStyleBorderChanged:      if (_widgetsLoaded) saveWidgets()
     onStyleShadowChanged:      if (_widgetsLoaded) saveWidgets()
     onStyleRadiusSmallChanged: if (_widgetsLoaded) saveWidgets()
-    onStyleHeightMinChanged:   if (_widgetsLoaded) saveWidgets()
     onWorkspaceStyleChanged:   if (_widgetsLoaded) saveWidgets()
     onBarPositionChanged:      if (_widgetsLoaded) saveWidgets()
 
@@ -397,7 +396,8 @@ Item {
                     }
                     // +10 styleBorder (independent border on/off). Old caches lack it →
                     // migrate from the old coupled meaning: border = NOT shadow.
-                    if (parts.length > wsField + 10) theme.styleBorder = parts[wsField + 10] === "1"
+                    // Default-true → parse "!== 0" so a corrupted token keeps borders ON.
+                    if (parts.length > wsField + 10) theme.styleBorder = parts[wsField + 10] !== "0"
                     else if (parts.length > wsField + 5) theme.styleBorder = !theme.styleShadow
                 }
                 theme._widgetsLoaded = true
