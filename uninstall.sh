@@ -10,6 +10,14 @@ c_g=$'\e[32m'; c_y=$'\e[33m'; c_0=$'\e[0m'
 info() { printf "%s==>%s %s\n" "$c_g" "$c_0" "$*"; }
 warn() { printf "%s!!%s %s\n"  "$c_y" "$c_0" "$*"; }
 
+# 0. ownership guard — refuse to touch ANYTHING if a config dir exists that we
+# did not install (install.sh writes .qsrise). Checked before any removal so a
+# foreign install aborts cleanly instead of losing helpers/units/lists first.
+if [[ -d "$DEST" && ! -e "$DEST/.qsrise" ]]; then
+  warn "$DEST was not installed by Quickshell Rise (no .qsrise marker) — leaving everything untouched."
+  exit 1
+fi
+
 # 1. stop the running bar
 # stop existing bar (supports both -c bar and -p $DEST modes)
 pkill -f "qs.*-c bar" 2>/dev/null && info "Stopped the bar" || true
@@ -95,11 +103,7 @@ hook="$HOME/.config/omarchy/hooks/theme-set.d/50-quickshell-bar.sh"
 [[ -f "$hook" ]] && { rm -f "$hook"; info "Removed theme hook"; }
 
 # 4. remove the config — restore the most recent backup if one exists
-# safety: refuse to touch a config we didn't install (install.sh writes .qsrise)
-if [[ -d "$DEST" && ! -e "$DEST/.qsrise" ]]; then
-  warn "$DEST was not installed by Quickshell Rise (no .qsrise marker) — leaving it untouched."
-  exit 1
-fi
+# (ownership already verified at the top: $DEST is ours, or does not exist)
 restored=false
 if [[ -d "$DEST" ]]; then
   rm -rf "$DEST"

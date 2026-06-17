@@ -77,9 +77,11 @@ if $primary_ok && $mirror_ok; then
   else
     # The two mirrors of the same upstream disagree — transient lag or a tampered
     # feed, indistinguishable here. Don't trust either alone: UNION them so a
-    # stripped feed can never drop a known-malicious name (false negatives are the
-    # danger; extra names only ever cause a harmless WARN). Flag it loudly instead
-    # of going degraded, so a benign lag doesn't cry wolf.
+    # stripped feed can never drop a known-malicious name. False negatives are the
+    # real danger; extra/injected names only ever OVER-block (a false-positive FAIL
+    # holds a package back — safe direction, never installs malware, though it can
+    # block a legitimate package). Flagged via mirror_mismatch; the gate escalates
+    # that to degraded so the divergence is a loud "protection uncertain" state.
     mirror_mismatch=true
     sort -u "$tmpd/primary" "$tmpd/mirror" > "$tmpd/base"
     echo "qs-aur-blacklist-fetch: primary/mirror MISMATCH — using their union ($(count "$tmpd/base") names)" >&2

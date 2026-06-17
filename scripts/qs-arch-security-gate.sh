@@ -91,6 +91,7 @@ degraded=false
 $meta_degraded && degraded=true                            # fetcher kept an old list / fetch failed
 $meta_pending  && degraded=true                            # a large jump is quarantined, unadopted
 $stale         && degraded=true                            # protection list is too old
+$mirror_mismatch && degraded=true                          # feeds diverged → protection uncertain
 
 # --- JSON emitter (printf-based, minimal escaping; no jq dependency) ------
 jstr() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '%s' "$s"; }
