@@ -187,7 +187,7 @@ PanelWindow {
     }
     function deleteFocused() {
         if (!sel || !sel.filePath) return
-        deleteProc.command = ["bash", "-c", "rm -f " + shq(sel.filePath)]
+        deleteProc.command = ["bash", "-c", "f=" + shq(sel.filePath) + "; gio trash -- \"$f\" 2>/dev/null || trash-put -- \"$f\" 2>/dev/null || rm -f -- \"$f\""]
         deleteProc.running = false; deleteProc.running = true
         confirmDelete = false
     }
