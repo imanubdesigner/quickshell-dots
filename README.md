@@ -195,3 +195,7 @@ versions/V1/
 ```
 
 </details>
+
+## License
+
+[MIT](LICENSE) © 2026 HANCORE-linux
