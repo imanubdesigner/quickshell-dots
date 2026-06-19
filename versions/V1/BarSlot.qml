@@ -58,6 +58,45 @@ PanelWindow {
         }
     }
 
+    // ── window-loss watchdog: recover from EGL context loss / Wayland surface lost ──
+    // On fragile GPUs (RTX 3080) the GPU context or output can die on suspend/resume
+    // while the process stays alive. Reload the config to recreate the window.
+    // Logs to journalctl and ~/.cache/quickshell-windowloss.log
+    Connections {
+        target: barSlot
+        function onResourcesLost() { barSlot.onWindowLost("resourcesLost") }
+        function onClosed()        { barSlot.onWindowLost("closed") }
+    }
+    function onWindowLost(reason) {
+        var now = new Date()
+        var ts  = now.getFullYear() + "-"
+            + String(now.getMonth() + 1).padStart(2, "0") + "-"
+            + String(now.getDate()).padStart(2, "0") + " "
+            + String(now.getHours()).padStart(2, "0") + ":"
+            + String(now.getMinutes()).padStart(2, "0") + ":"
+            + String(now.getSeconds()).padStart(2, "0")
+        var screen_ = barSlot.screen
+        var info = (screen_ ? screen_.name : "none")
+            + " (" + (screen_ ? screen_.width : 0)
+            + "x" + (screen_ ? screen_.height : 0) + ")"
+        var nscr = String(Quickshell.screens.length)
+        console.warn("[BarSlot] window lost: " + reason + " | screen: " + info + " | screens: " + nscr)
+        var logpath = Quickshell.env("HOME") + "/.cache/quickshell-windowloss.log"
+        logProc.command = ["bash", "-c",
+            "mkdir -p \"$(dirname '" + logpath + "')\" && echo '" + ts + " | " + reason + " | screen: " + info + " | screens: " + nscr + "' >> '" + logpath + "'"]
+        logProc.running = false; logProc.running = true
+        reloadTimer.start()
+    }
+    Timer {
+        id: reloadTimer
+        interval: 1000
+        onTriggered: {
+            console.warn("[BarSlot] reloading after window loss")
+            Quickshell.reload(true)
+        }
+    }
+    Process { id: logProc }
+
     readonly property color accent: barSlot.root.seal
 
     // ── dim backdrop while unlocked (edit mode); click empty → lock ──
