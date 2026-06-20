@@ -36,6 +36,57 @@ PanelWindow {
     // ── link speed (negotiated connection rate) ──
     property string linkSpeed:   ""
 
+    function flagForCountry(code) {
+        var value = (code || "").toUpperCase()
+        if (!/^[A-Z]{2}$/.test(value)) return ""
+        return String.fromCharCode(
+            0xD83C, 0xDDE6 + value.charCodeAt(0) - 65,
+            0xD83C, 0xDDE6 + value.charCodeAt(1) - 65)
+    }
+
+    function formatMbps(value) {
+        if (!(value > 0)) return "—"
+        return (value >= 100 ? value.toFixed(0) : value.toFixed(1)) + " Mbps"
+    }
+
+    function formatPing(value) {
+        if (!(value > 0)) return "—"
+        return (value < 10 ? value.toFixed(1) : value.toFixed(0)) + " ms"
+    }
+
+    function edgeText() {
+        if (speedTest.phase === "idle" || speedTest.phase === "cancelled") return "Not tested"
+        if (speedTest.phase === "offline") return "Offline"
+        if (speedTest.phase === "error" || speedTest.phase === "timeout") return "Unavailable"
+        if (speedTest.phase === "latency") return "Locating…"
+        var edge = speedTest.edgeCode !== "" ? "Cloudflare · " + speedTest.edgeCode : "Cloudflare Edge"
+        var flag = flagForCountry(speedTest.countryCode)
+        return edge + (flag !== "" ? " " + flag : "")
+    }
+
+    // timestamp captured when a run completes — shown in the green "done" footer
+    property string lastTestStamp: ""
+
+    CloudflareSpeedTest {
+        id: speedTest
+        // live, 2 s-polled source (NetworkWidget → root.networkMode mirror) so a mid-test
+        // disconnect flips online→false at once and onOnlineChanged shows "Offline",
+        // instead of surfacing later as an XHR error/timeout. netPanel.mode (open-only) stays
+        // the source for the panel's detail rows.
+        online: root.networkMode !== "none"
+    }
+
+    Connections {
+        target: speedTest
+        function onPhaseChanged() {
+            if (speedTest.phase === "success")
+                netPanel.lastTestStamp = new Date().toLocaleString(Qt.locale("en_US"), "HH:mm · d MMM")
+        }
+    }
+
+    // ✓ marks show only on a healthy run (in progress or finished ok) — never on error/cancel/offline
+    readonly property bool speedRunOk: speedTest.running || speedTest.phase === "success"
+
     function toggleWifi() {
         var wasBlocked = netPanel.wifiBlocked
         rfkillToggle.command = ["bash", "-c", wasBlocked ? "rfkill unblock wifi" : "rfkill block wifi"]
@@ -201,6 +252,150 @@ PanelWindow {
                     visible: netPanel.linkSpeed !== ""
                     Text { text: "Link speed"; color: root.sumi; font.family: root.mono; font.pixelSize: 11; width: parent.width * 0.4 }
                     Text { text: netPanel.linkSpeed; color: root.ink; font.family: root.mono; font.pixelSize: 11 }
+                }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: root.sep }
+
+            Column {
+                width: parent.width
+                spacing: 4
+
+                Item {
+                    width: parent.width
+                    height: 24
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "SPEED TEST"
+                        color: root.sumi
+                        font.family: root.mono
+                        font.pixelSize: 10
+                        font.letterSpacing: 1
+                    }
+
+                    // action: a real button in the panel's hover idiom (network-row style)
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 54
+                        height: 22
+                        radius: root.tileRadius
+                        color: speedTestMa.containsMouse
+                             ? Qt.rgba(root.seal.r, root.seal.g, root.seal.b, 0.18)
+                             : Qt.rgba(root.ink.r, root.ink.g, root.ink.b, 0.06)
+                        border.color: speedTestMa.containsMouse ? root.seal : root.sep
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: speedTest.running ? "stop" : "start"
+                            color: speedTestMa.enabled ? root.seal : root.sumi
+                            font.family: root.mono
+                            font.pixelSize: 11
+                        }
+
+                        MouseArea {
+                            id: speedTestMa
+                            anchors.fill: parent
+                            enabled: speedTest.running || netPanel.mode !== "none"
+                            hoverEnabled: true
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: speedTest.running ? speedTest.cancel() : speedTest.start()
+                        }
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    Text { text: "Edge"; color: root.sumi; font.family: root.mono; font.pixelSize: 11; width: parent.width * 0.4 }
+                    Text { text: netPanel.edgeText(); color: root.ink; font.family: root.mono; font.pixelSize: 11; width: parent.width * 0.6; elide: Text.ElideRight }
+                }
+                Item {
+                    width: parent.width; height: 16
+                    Text {
+                        id: pingLabel
+                        anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
+                        text: "Ping"; color: root.sumi; font.family: root.mono; font.pixelSize: 11
+                        width: parent.width * 0.4
+                    }
+                    Text {
+                        anchors.left: pingLabel.right; anchors.right: pingCheck.left; anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: speedTest.phase === "latency" ? "Testing…" : (netPanel.speedRunOk ? netPanel.formatPing(speedTest.pingMs) : "—")
+                        color: root.ink; font.family: root.mono; font.pixelSize: 11; elide: Text.ElideRight
+                    }
+                    Text {
+                        id: pingCheck
+                        anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                        text: "✓"; visible: speedTest.pingMs > 0 && netPanel.speedRunOk
+                        color: root.green; font.family: root.mono; font.pixelSize: 11
+                    }
+                }
+                Item {
+                    width: parent.width; height: 16
+                    Text {
+                        id: dlLabel
+                        anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
+                        text: "Download"; color: root.sumi; font.family: root.mono; font.pixelSize: 11
+                        width: parent.width * 0.4
+                    }
+                    Text {
+                        anchors.left: dlLabel.right; anchors.right: dlCheck.left; anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: speedTest.phase === "download" ? "Testing…" : (netPanel.speedRunOk ? netPanel.formatMbps(speedTest.downloadMbps) : "—")
+                        color: (speedTest.downloadMbps > 0 && netPanel.speedRunOk) ? root.seal : root.ink
+                        font.family: root.mono; font.pixelSize: 11; elide: Text.ElideRight
+                    }
+                    Text {
+                        id: dlCheck
+                        anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                        text: "✓"; visible: speedTest.downloadMbps > 0 && netPanel.speedRunOk
+                        color: root.green; font.family: root.mono; font.pixelSize: 11
+                    }
+                }
+                Item {
+                    width: parent.width; height: 16
+                    Text {
+                        id: ulLabel
+                        anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
+                        text: "Upload"; color: root.sumi; font.family: root.mono; font.pixelSize: 11
+                        width: parent.width * 0.4
+                    }
+                    Text {
+                        anchors.left: ulLabel.right; anchors.right: ulCheck.left; anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: speedTest.phase === "upload" ? "Testing…" : (netPanel.speedRunOk ? netPanel.formatMbps(speedTest.uploadMbps) : "—")
+                        color: (speedTest.uploadMbps > 0 && netPanel.speedRunOk) ? root.indigo : root.ink
+                        font.family: root.mono; font.pixelSize: 11; elide: Text.ElideRight
+                    }
+                    Text {
+                        id: ulCheck
+                        anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                        text: "✓"; visible: speedTest.uploadMbps > 0 && netPanel.speedRunOk
+                        color: root.green; font.family: root.mono; font.pixelSize: 11
+                    }
+                }
+
+                // animated height so the card grows/shrinks smoothly instead of snapping
+                Item {
+                    width: parent.width
+                    height: speedFooter.visible ? speedFooter.implicitHeight : 0
+                    clip: true
+                    Behavior on height { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+
+                    Text {
+                        id: speedFooter
+                        width: parent.width
+                        visible: speedTest.phase === "success" && netPanel.lastTestStamp !== ""
+                        text: "done · " + netPanel.lastTestStamp
+                        color: root.green
+                        font.family: root.mono
+                        font.pixelSize: 10
+                        font.letterSpacing: 1
+                    }
                 }
             }
 
@@ -547,6 +742,8 @@ PanelWindow {
             netData.running = false; netData.running = true
             devProbe.running = false; devProbe.running = true
             speedProc.running = false; speedProc.running = true
+        } else if (speedTest.running) {
+            speedTest.cancel()
         }
     }
 }

@@ -247,8 +247,20 @@ Item {
         }
     }
 
+    // Dynamic poll cadence. Fast (2 s) whenever something needs fresh data: the pill is shown
+    // (root.modNetwork), the panel is open (root.networkVisible — also covers a running speed
+    // test, which keeps the panel open), or we're on Wi-Fi (signal % moves; the Wi-Fi branch is
+    // also the only one that spawns `iw`). Slow (15 s) ONLY when the module is hidden AND the
+    // panel is closed AND we're on Ethernet or offline — so the saving (fewer idle bash/ip/awk
+    // spawns) is limited to a hidden Ethernet module or the offline state; Wi-Fi always polls
+    // fast. Changing a Timer's interval does not force a tick, so refresh once immediately on
+    // becoming relevant.
+    readonly property bool fastPoll: root.modNetwork || root.networkVisible || mode === "wifi"
+    onFastPollChanged: if (fastPoll) { netProc.running = false; netProc.running = true }
+
     Timer {
-        interval: 2000; running: true; repeat: true; triggeredOnStart: true
+        interval: rootMod.fastPoll ? 2000 : 15000
+        running: true; repeat: true; triggeredOnStart: true
         onTriggered: { netProc.running = false; netProc.running = true }
     }
 
