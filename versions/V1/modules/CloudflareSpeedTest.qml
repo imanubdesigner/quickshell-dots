@@ -222,16 +222,19 @@ Item {
     function measureDownload(bytes, onSuccess, measurementAttempt) {
         sendRequest("GET", downloadEndpoint + "?bytes=" + bytes, null, true, function(result) {
             captureLocation(result)
-            var duration = result.finishedAt - result.headersAt
-            var value = result.responseBytes * 8 / duration / 1000
-            if (!(duration > 0) || !(result.responseBytes > 0) || !(value > 0) || !isFinite(value)) {
+            // Cloudflare reference: download duration = ping + payload time (calcDownloadDuration).
+            // payloadTime alone still drives calibration (>=500 ms of real transfer), so the
+            // selected payload size is byte-for-byte unchanged; only the reported value matches CF.
+            var payloadTime = result.finishedAt - result.headersAt
+            var value = result.responseBytes * 8 / (internalPingMs + payloadTime) / 1000
+            if (!(payloadTime > 0) || !(result.responseBytes > 0) || !(value > 0) || !isFinite(value)) {
                 if (measurementAttempt < 1)
                     measureDownload(bytes, onSuccess, measurementAttempt + 1)
                 else
                     finishFailure("error", "Invalid download result")
                 return
             }
-            onSuccess(value, duration)
+            onSuccess(value, payloadTime)
         }, 0)
     }
 
@@ -274,17 +277,19 @@ Item {
         var body = "0".repeat(bytes)
         sendRequest("POST", uploadEndpoint + "?bytes=" + bytes, body, false, function(result) {
             captureLocation(result)
-            var duration = Math.max(1, result.headersAt - result.startedAt - internalPingMs)
-            var value = bytes * 8 / duration / 1000
+            // Cloudflare reference: upload duration = full TTFB (calcUploadDuration), no ping subtraction.
+            // Calibration still gates on transfer time (ttfb - ping) so the selected size is unchanged.
+            var ttfb = result.headersAt - result.startedAt
+            var value = bytes * 8 / ttfb / 1000
             body = null
-            if (!(value > 0) || !isFinite(value)) {
+            if (!(ttfb > 0) || !(value > 0) || !isFinite(value)) {
                 if (measurementAttempt < 1)
                     measureUpload(bytes, onSuccess, measurementAttempt + 1)
                 else
                     finishFailure("error", "Invalid upload result")
                 return
             }
-            onSuccess(value, duration)
+            onSuccess(value, ttfb - internalPingMs)
         }, 0)
     }
 

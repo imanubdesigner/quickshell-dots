@@ -69,7 +69,11 @@ PanelWindow {
 
     CloudflareSpeedTest {
         id: speedTest
-        online: netPanel.mode !== "none"
+        // live, 2 s-polled source (NetworkWidget → root.networkMode mirror) so a mid-test
+        // disconnect flips online→false at once and onOnlineChanged shows "Offline",
+        // instead of surfacing later as an XHR error/timeout. netPanel.mode (open-only) stays
+        // the source for the panel's detail rows.
+        online: root.networkMode !== "none"
     }
 
     Connections {
