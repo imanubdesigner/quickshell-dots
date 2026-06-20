@@ -468,7 +468,7 @@ PanelWindow {
                     visible: slot.hasGapAfter && slot.index < lastVisibleIndex
                     width: 14
                     height: slot.height
-                    x: (slot.cr + slot.width + 6) / 2 - width / 2   // centered in the gap
+                    x: (slot.cr + slot.pad + slot.width + 6) / 2 - width / 2   // centered in the gap (cr+pad = pill-right, matches gapInterval)
                     z: 30
                     Text {
                         anchors.centerIn: parent
